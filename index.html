@@ -184,11 +184,14 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 
   <div class="card">
-    <div class="group-label">累計總覽（所有時間）</div>
-    <div class="metrics3" id="total-metrics"></div>
+    <div class="group-label" id="home-year-label">年度概況</div>
+    <div class="metrics3" id="year-metrics"></div>
     <div class="divider"></div>
     <div class="group-label" id="home-month-label">本月概況</div>
     <div class="metrics3" id="month-metrics"></div>
+    <div class="divider"></div>
+    <div class="group-label" id="home-day-label">今日概況</div>
+    <div class="metrics3" id="day-metrics"></div>
   </div>
 
   <div class="card">
@@ -212,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <option>門鎖開鎖</option>
           <option>門鎖安裝</option>
           <option>電子鎖安裝</option>
+          <option>電子鎖開鎖</option>
           <option value="其他">其他</option>
         </select>
       </div>
@@ -321,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 const ICONS = {
-  '汽車開鎖':'🚗','機車開鎖':'🛵','門鎖開鎖':'🚪','門鎖安裝':'🔧','電子鎖安裝':'💻',
+  '汽車開鎖':'🚗','機車開鎖':'🛵','門鎖開鎖':'🚪','門鎖安裝':'🔧','電子鎖安裝':'💻','電子鎖開鎖':'🔓',
   '工具購買':'🔧','鎖的成本':'🔒','額外支出':'💵','其他':'•'
 };
 
@@ -489,27 +493,46 @@ function renderBreakdown(subset, label) {
 }
 
 function renderHome() {
-  const now = new Date().toISOString().slice(0,7);
-  // 累計
-  const aI = records.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-  const aE = records.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
-  const aP = aI-aE;
-  document.getElementById('total-metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">總營收</div><div class="metric-value c-inc">+${fmt(aI)}</div></div>
-    <div class="metric"><div class="metric-label">總支出</div><div class="metric-value c-exp">-${fmt(aE)}</div></div>
-    <div class="metric"><div class="metric-label">總利潤</div><div class="metric-value ${aP>=0?'c-pp':'c-pn'}">${aP>=0?'+':'-'}${fmt(aP)}</div></div>
+  const today = new Date().toISOString().split('T')[0];
+  const nowMonth = today.slice(0,7);
+  const nowYear  = today.slice(0,4);
+
+  // 年度
+  document.getElementById('home-year-label').textContent = nowYear + ' 年度概況';
+  const yearly = records.filter(r=>r.date.slice(0,4)===nowYear);
+  const yI = yearly.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+  const yE = yearly.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
+  const yP = yI-yE;
+  document.getElementById('year-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">年營收</div><div class="metric-value c-inc">+${fmt(yI)}</div></div>
+    <div class="metric"><div class="metric-label">年支出</div><div class="metric-value c-exp">-${fmt(yE)}</div></div>
+    <div class="metric"><div class="metric-label">年利潤</div><div class="metric-value ${yP>=0?'c-pp':'c-pn'}">${yP>=0?'+':'-'}${fmt(yP)}</div></div>
   `;
-  // 本月
-  document.getElementById('home-month-label').textContent = now.replace('-','年') + '月概況';
-  const monthly = records.filter(r=>r.date.slice(0,7)===now);
+
+  // 月
+  document.getElementById('home-month-label').textContent = nowMonth.replace('-','年') + '月概況';
+  const monthly = records.filter(r=>r.date.slice(0,7)===nowMonth);
   const mI = monthly.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
   const mE = monthly.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
   const mN = mI-mE;
   document.getElementById('month-metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">本月收入</div><div class="metric-value c-inc">+${fmt(mI)}</div></div>
-    <div class="metric"><div class="metric-label">本月支出</div><div class="metric-value c-exp">-${fmt(mE)}</div></div>
-    <div class="metric"><div class="metric-label">本月結餘</div><div class="metric-value ${mN>=0?'c-pp':'c-pn'}">${mN>=0?'+':'-'}${fmt(mN)}</div></div>
+    <div class="metric"><div class="metric-label">月營收</div><div class="metric-value c-inc">+${fmt(mI)}</div></div>
+    <div class="metric"><div class="metric-label">月支出</div><div class="metric-value c-exp">-${fmt(mE)}</div></div>
+    <div class="metric"><div class="metric-label">月利潤</div><div class="metric-value ${mN>=0?'c-pp':'c-pn'}">${mN>=0?'+':'-'}${fmt(mN)}</div></div>
   `;
+
+  // 今日
+  document.getElementById('home-day-label').textContent = today.replace(/-/g,'/') + ' 今日概況';
+  const daily = records.filter(r=>r.date===today);
+  const dI = daily.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+  const dE = daily.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
+  const dN = dI-dE;
+  document.getElementById('day-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">日營收</div><div class="metric-value c-inc">+${fmt(dI)}</div></div>
+    <div class="metric"><div class="metric-label">日支出</div><div class="metric-value c-exp">-${fmt(dE)}</div></div>
+    <div class="metric"><div class="metric-label">日利潤</div><div class="metric-value ${dN>=0?'c-pp':'c-pn'}">${dN>=0?'+':'-'}${fmt(dN)}</div></div>
+  `;
+
   // 本月列表
   const sorted = [...monthly].sort((a,b)=>b.date.localeCompare(a.date));
   const el = document.getElementById('home-list');
