@@ -83,6 +83,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .item-info { flex:1; min-width:0; }
 .item-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .item-meta { font-size:12px; color:var(--text2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.item-meta a { color: #ffffff; }
 .item-amt { font-size:15px; font-weight:600; flex-shrink:0; }
 .del-btn { background:none; border:none; cursor:pointer; color:var(--text2); font-size:20px; padding:4px; flex-shrink:0; }
 .bd-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
@@ -326,7 +327,6 @@ function renderCal(selectedDay) {
   const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
   const today = new Date().toISOString().split('T')[0];
 
-  // 當月記錄按日期分組
   const dayMap = {};
   records.filter(r=>r.date.slice(0,7)===monthStr).forEach(r=>{
     const d = r.date.split('-')[2];
@@ -334,30 +334,24 @@ function renderCal(selectedDay) {
     dayMap[d].push(r);
   });
 
-  // 週收入計算：追蹤每週 (由日開始) 的收入
-  const weekIncome = {};  // key: 週的第一個日期(日) -> 累計收入
+  const weekIncome = {};
   for (let d=1; d<=daysInMonth; d++) {
     const ds = String(d).padStart(2,'0');
     const recs = dayMap[ds] || [];
     const dow = (firstDay + d - 1) % 7;
-    const weekStart = d - dow; // 本週日的日數
+    const weekStart = d - dow;
     if (!weekIncome[weekStart]) weekIncome[weekStart] = 0;
     weekIncome[weekStart] += recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
   }
 
-  // 把所有格子收集成陣列，再切成週
   const cells = [];
-
-  // 星期標題列
   const dowHtml = DOWS.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#D85A30':i===6?'color:#185FA5':''}">${d}</div>`).join('');
 
-  // 前月補白
   for (let i=0; i<firstDay; i++) {
     const d = daysInPrev - firstDay + i + 1;
     cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
   }
 
-  // 本月
   for (let d=1; d<=daysInMonth; d++) {
     const ds = String(d).padStart(2,'0');
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${ds}`;
@@ -386,18 +380,15 @@ function renderCal(selectedDay) {
     cells.push(`<div class="cal-day${isToday?' today':''}${recs.length||dayMemos.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}')"><div class="cal-day-num" style="${numColor}">${d}</div><div class="cal-day-dot-wrap">${tagsHtml}</div></div>`);
   }
 
-  // 後月補白
   const total = firstDay + daysInMonth;
   const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
   for (let d=1; d<=remain; d++) {
     cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
   }
 
-  // 切成週，每週後面插入小計
   let html = `<div class="cal-dow-row">${dowHtml}</div>`;
   for (let w=0; w < cells.length/7; w++) {
     const weekCells = cells.slice(w*7, w*7+7);
-    // 計算這週的收入：找出本月的日期
     let wInc = 0;
     weekCells.forEach(cell => {
       const m = cell.match(/onclick="selectCalDay\('(\d{4}-\d{2}-\d{2})'\)/);
@@ -413,7 +404,6 @@ function renderCal(selectedDay) {
 
   document.getElementById('cal-grid').innerHTML = html;
 
-  // 顯示選取日明細
   if (selectedDay) {
     const dayRecs = records.filter(r=>r.date===selectedDay).sort((a,b)=>a.id-b.id);
     const dayMemoList = memos[selectedDay] || [];
@@ -503,7 +493,6 @@ function deleteMemo(idx) {
   renderCal(memoDate);
 }
 
-// Enter 鍵新增備忘
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('memo-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') addMemo();
@@ -615,7 +604,6 @@ function itemHTML(r,kw) {
   const color=r.type==='income'?'var(--inc)':'var(--exp)';
   const sign=r.type==='income'?'+':'-';
   const phoneStr=r.phone?`<span style="color:var(--inc);margin-left:4px">📞 ${hl(r.phone)}</span>`:'';
-  // 地圖連結：備註有地址就加連結
   const noteStr = r.note ? ' · ' + hl(r.note) : '';
   return `
     <div class="item">
