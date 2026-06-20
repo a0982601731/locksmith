@@ -616,7 +616,7 @@ function itemHTML(r,kw) {
   const sign=r.type==='income'?'+':'-';
   const phoneStr=r.phone?`<span style="color:var(--inc);margin-left:4px">📞 ${hl(r.phone)}</span>`:'';
   // 地圖連結：備註有地址就加連結
-  const noteStr = r.note ? ` · <a class="map-link" href="https://maps.google.com/?q=${encodeURIComponent(r.note)}" target="_blank">📍${hl(r.note)}</a>` : '';
+  const noteStr = r.note ? ' · ' + hl(r.note) : '';
   return `
     <div class="item">
       <div class="item-icon ${r.type==='income'?'icon-i':'icon-e'}">${r.icon||'🔑'}</div>
