@@ -116,6 +116,10 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .cal-tag.inc { background:var(--inc-bg); color:var(--inc-fg); }
 .cal-tag.exp { background:var(--exp-bg); color:var(--exp-fg); }
 .cal-card { padding:12px 4px; }
+.cal-day.day-gold { background: linear-gradient(135deg, #3a2e00, #5a4500); }
+.cal-day.day-gold .cal-day-num { color: #FFD700 !important; font-weight:700; }
+.cal-day.day-green { background: linear-gradient(135deg, #002a1a, #004d2e); }
+.cal-day.day-green .cal-day-num { color: #4CDB9A !important; font-weight:700; }
 .cal-day-detail { background:var(--card); border-radius:var(--radius); padding:12px 14px; margin-top:10px; border:0.5px solid var(--border); }
 .cal-day-detail-title { font-size:14px; font-weight:600; margin-bottom:10px; color:var(--text); }
 </style>
@@ -314,8 +318,10 @@ function renderCal(selectedDay) {
     });
     if (recs.length > 2) tagsHtml += `<div class="cal-tag inc">+${recs.length-2}筆</div>`;
 
+    const dayIncome = recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+    const dayClass = dayIncome>=10000 ? ' day-gold' : dayIncome>=5000 ? ' day-green' : '';
     const selStyle = isSel ? 'outline:2px solid var(--inc);outline-offset:-2px;' : '';
-    html += `<div class="cal-day${isToday?' today':''}${recs.length?' has-record':''}" style="${selStyle}" onclick="selectCalDay('${dateStr}')">
+    html += `<div class="cal-day${isToday?' today':''}${recs.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}')">
       <div class="cal-day-num" style="${numColor}">${d}</div>
       <div class="cal-day-dot-wrap">${tagsHtml}</div>
     </div>`;
