@@ -247,9 +247,15 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     </div>
 
-    <div class="field">
-      <label>備註（地址、客戶等）</label>
-      <input type="text" id="inp-note" placeholder="例：台中市西區民權路100號" />
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="field" style="margin:0">
+        <label>客戶電話</label>
+        <input type="tel" id="inp-phone" placeholder="09xx-xxx-xxx" inputmode="tel" />
+      </div>
+      <div class="field" style="margin:0">
+        <label>備註（地址等）</label>
+        <input type="text" id="inp-note" placeholder="例：民權路100號" />
+      </div>
     </div>
 
     <button class="add-btn" onclick="addRecord()">＋ 新增</button>
@@ -408,17 +414,19 @@ function addRecord() {
   const amount = parseFloat(document.getElementById('inp-amount').value);
   const date   = document.getElementById('inp-date').value;
   const note   = document.getElementById('inp-note').value.trim();
+  const phone  = document.getElementById('inp-phone').value.trim();
   if (!entry)               { alert('請選擇收入或支出項目'); return; }
   if (!entry.name)          { alert('請填寫自訂項目名稱'); return; }
   if (!amount || amount<=0) { alert('請填寫正確金額'); return; }
   if (!date)                { alert('請選擇日期'); return; }
-  records.push({ id: Date.now(), type: entry.type, name: entry.name, icon: entry.icon, amount, date, note });
+  records.push({ id: Date.now(), type: entry.type, name: entry.name, icon: entry.icon, amount, date, note, phone });
   save();
   document.getElementById('income-select').value  = '';
   document.getElementById('expense-select').value = '';
   document.getElementById('inp-custom').value = '';
   document.getElementById('inp-amount').value = '';
   document.getElementById('inp-note').value   = '';
+  document.getElementById('inp-phone').value  = '';
   checkCustom();
   buildMonthOptions();
   alert('✅ 新增成功！');
@@ -454,17 +462,49 @@ function itemHTML(r, kw) {
   }
   const color = r.type==='income' ? 'var(--inc)' : 'var(--exp)';
   const sign  = r.type==='income' ? '+' : '-';
+  const phoneStr = r.phone ? `<span style="color:var(--inc);margin-left:4px">📞 ${hl(r.phone)}</span>` : '';
   return `
     <div class="item">
       <div class="item-icon ${r.type==='income'?'icon-i':'icon-e'}">${r.icon||'🔑'}</div>
       <div class="item-info">
         <div class="item-name">${hl(r.name)}</div>
-        <div class="item-meta">${r.date}${r.note?' · '+hl(r.note):''}</div>
+        <div class="item-meta">${r.date}${r.note?' · '+hl(r.note):''}${phoneStr}</div>
       </div>
       <div class="item-amt" style="color:${color}">${sign}${r.amount.toLocaleString()}</div>
+      <button class="del-btn" onclick="editRecord(${r.id})" style="font-size:17px">✏️</button>
       <button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>
     </div>
   `;
+}
+
+function editRecord(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  switchPage('add');
+  // 填入現有資料
+  setTimeout(() => {
+    if (r.type === 'income') {
+      document.getElementById('income-select').value = Object.keys(ICONS).includes(r.name) ? r.name : '其他';
+      document.getElementById('expense-select').value = '';
+      if (!Object.keys(ICONS).includes(r.name) || r.name === '其他') {
+        document.getElementById('inp-custom').value = r.name;
+      }
+    } else {
+      document.getElementById('expense-select').value = Object.keys(ICONS).includes(r.name) ? r.name : '其他';
+      document.getElementById('income-select').value = '';
+      if (!Object.keys(ICONS).includes(r.name) || r.name === '其他') {
+        document.getElementById('inp-custom').value = r.name;
+      }
+    }
+    checkCustom();
+    document.getElementById('inp-amount').value = r.amount;
+    document.getElementById('inp-date').value   = r.date;
+    document.getElementById('inp-note').value   = r.note || '';
+    document.getElementById('inp-phone').value  = r.phone || '';
+    // 刪除舊記錄，新增時會建立新的
+    records = records.filter(x => x.id !== id);
+    save();
+  }, 50);
 }
 
 function renderBreakdown(subset, label) {
