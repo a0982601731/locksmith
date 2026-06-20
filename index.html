@@ -314,15 +314,27 @@ calYear = now.getFullYear(); calMonth = now.getMonth();
 homeCalYear = now.getFullYear(); homeCalMonth = now.getMonth();
 
 // ===== 備份 / 匯入 =====
-function exportData() {
+async function exportData() {
   const data = { records, memos, exportedAt: new Date().toISOString() };
   const json = JSON.stringify(data, null, 2);
+  const date = new Date().toISOString().slice(0,10);
+  const fileName = `鎖匠記帳備份_${date}.json`;
   const blob = new Blob([json], { type: 'application/json' });
+  const file = new File([blob], fileName, { type: 'application/json' });
+  // 優先用分享選單（可選 LINE、AirDrop、iCloud 等）
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: '鎖匠記帳備份' });
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return; // 使用者取消
+    }
+  }
+  // 降級：直接下載
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = `鎖匠記帳備份_${date}.json`;
+  a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
 }
