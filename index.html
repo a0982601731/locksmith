@@ -99,7 +99,9 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .cal-title { font-size:17px; font-weight:700; }
 .cal-nav { background:none; border:none; font-size:22px; cursor:pointer; color:var(--inc); padding:4px 10px; }
-.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:0; width:100%; }
+.cal-grid { display:flex; flex-direction:column; width:100%; }
+.cal-week { display:grid; grid-template-columns:repeat(7,1fr); gap:0; width:100%; }
+.cal-dow-row { display:grid; grid-template-columns:repeat(7,1fr); gap:0; width:100%; }
 .cal-dow { text-align:center; font-size:11px; color:var(--text2); padding:4px 0 6px; font-weight:500; }
 .cal-dow:first-child { color:#D85A30; }
 .cal-dow:last-child { color:#185FA5; }
@@ -122,7 +124,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .cal-day.day-green { background: #1D9E75 !important; }
 .cal-day.day-green .cal-day-num { color: #fff !important; font-weight:700; }
 .cal-day.day-green .cal-tag { background: rgba(255,255,255,0.25) !important; color:#fff !important; }
-.cal-week-row { grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; padding:2px 6px 4px; background:var(--card); border-radius:4px; margin-bottom:1px; }
+.cal-week-row { display:flex; justify-content:space-between; align-items:center; padding:2px 8px 5px; background:var(--card); border-radius:0 0 4px 4px; margin-bottom:2px; }
 .cal-week-label { font-size:9px; color:var(--text2); }
 .cal-week-val { font-size:10px; font-weight:700; color:#185FA5; }
 .cal-day-detail { background:var(--card); border-radius:var(--radius); padding:12px 14px; margin-top:10px; border:0.5px solid var(--border); }
@@ -343,12 +345,16 @@ function renderCal(selectedDay) {
     weekIncome[weekStart] += recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
   }
 
-  let html = DOWS.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#D85A30':i===6?'color:#185FA5':''}">${d}</div>`).join('');
+  // 把所有格子收集成陣列，再切成週
+  const cells = [];
+
+  // 星期標題列
+  const dowHtml = DOWS.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#D85A30':i===6?'color:#185FA5':''}">${d}</div>`).join('');
 
   // 前月補白
   for (let i=0; i<firstDay; i++) {
     const d = daysInPrev - firstDay + i + 1;
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+    cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
   }
 
   // 本月
@@ -360,55 +366,48 @@ function renderCal(selectedDay) {
     const isSel   = dateStr === selectedDay;
     const dow = (firstDay + d - 1) % 7;
     const numColor = dow===0 ? 'color:#D85A30' : dow===6 ? 'color:#185FA5' : '';
-    const isSat = dow === 6;  // 週六 = 每週最後一欄
 
     let tagsHtml = '';
-
-    // 記帳標籤 (最多2筆)
     recs.slice(0,2).forEach(r => {
       const short = r.name.length>4 ? r.name.slice(0,4)+'…' : r.name;
       tagsHtml += `<div class="cal-tag ${r.type==='income'?'inc':'exp'}">${r.icon||''} ${short}</div>`;
     });
     if (recs.length > 2) tagsHtml += `<div class="cal-tag inc">+${recs.length-2}筆</div>`;
 
-    // 備忘標籤
     const dayMemos = memos[dateStr] || [];
     if (dayMemos.length > 0) {
       const memoShort = dayMemos[0].length>4 ? dayMemos[0].slice(0,4)+'…' : dayMemos[0];
       tagsHtml += `<div class="cal-tag memo">📌${memoShort}</div>`;
     }
 
-    // 業績變色
     const dayIncome = recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
     const dayClass = dayIncome>=10000 ? ' day-gold' : dayIncome>=5000 ? ' day-green' : '';
     const selStyle = isSel ? 'outline:2px solid var(--inc);outline-offset:-2px;' : '';
-
-    html += `<div class="cal-day${isToday?' today':''}${recs.length||dayMemos.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}')">
-      <div class="cal-day-num" style="${numColor}">${d}</div>
-      <div class="cal-day-dot-wrap">${tagsHtml}</div>
-    </div>`;
-
-    // 週六後插入週小計橫列
-    if (isSat) {
-      const weekStart = d - 6;
-      const wInc = weekIncome[weekStart] || 0;
-      const wStr = wInc >= 10000 ? (wInc/10000).toFixed(1)+'萬' : wInc.toLocaleString();
-      html += `<div class="cal-week-row"><span class="cal-week-label">本週收入</span><span class="cal-week-val">${wInc>0?'+'+wStr:'—'}</span></div>`;
-    }
+    cells.push(`<div class="cal-day${isToday?' today':''}${recs.length||dayMemos.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}')"><div class="cal-day-num" style="${numColor}">${d}</div><div class="cal-day-dot-wrap">${tagsHtml}</div></div>`);
   }
 
-  // 後月補白 + 最後一週小計
+  // 後月補白
   const total = firstDay + daysInMonth;
   const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
   for (let d=1; d<=remain; d++) {
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+    cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
   }
-  // 若最後一天不是週六，補上最後一週小計
-  if (remain > 0) {
-    const lastDow = (firstDay + daysInMonth - 1) % 7;
-    const lastWeekStart = daysInMonth - lastDow;
-    const wInc = weekIncome[lastWeekStart] || 0;
+
+  // 切成週，每週後面插入小計
+  let html = `<div class="cal-dow-row">${dowHtml}</div>`;
+  for (let w=0; w < cells.length/7; w++) {
+    const weekCells = cells.slice(w*7, w*7+7);
+    // 計算這週的收入：找出本月的日期
+    let wInc = 0;
+    weekCells.forEach(cell => {
+      const m = cell.match(/onclick="selectCalDay\('(\d{4}-\d{2}-\d{2})'\)/);
+      if (m) {
+        const dayRecs = records.filter(r=>r.date===m[1]&&r.type==='income');
+        wInc += dayRecs.reduce((s,r)=>s+r.amount,0);
+      }
+    });
     const wStr = wInc >= 10000 ? (wInc/10000).toFixed(1)+'萬' : wInc.toLocaleString();
+    html += `<div class="cal-week">${weekCells.join('')}</div>`;
     html += `<div class="cal-week-row"><span class="cal-week-label">本週收入</span><span class="cal-week-val">${wInc>0?'+'+wStr:'—'}</span></div>`;
   }
 
