@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
 html,body { height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
 .header { background:var(--card); border-bottom:0.5px solid var(--border); padding:14px 16px; position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
 .header h1 { font-size:19px; font-weight:700; }
+.header-btns { display:flex; gap:8px; }
+.hdr-btn { background:none; border:0.5px solid var(--border); border-radius:8px; padding:5px 10px; font-size:12px; color:var(--text); cursor:pointer; font-family:inherit; white-space:nowrap; }
+.hdr-btn.imp { color:var(--inc); border-color:var(--inc); }
 .content { padding:8px 8px 100px; max-width:480px; margin:0 auto; }
 .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:var(--card); border-top:0.5px solid var(--border); display:flex; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
 .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 4px 6px; background:none; border:none; cursor:pointer; color:var(--text2); font-size:10px; font-family:inherit; }
@@ -83,7 +86,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .item-info { flex:1; min-width:0; }
 .item-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .item-meta { font-size:12px; color:var(--text2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.item-meta a { color: #ffffff; }
+.item-meta a { color:#ffffff; }
 .item-amt { font-size:15px; font-weight:600; flex-shrink:0; }
 .del-btn { background:none; border:none; cursor:pointer; color:var(--text2); font-size:20px; padding:4px; flex-shrink:0; }
 .bd-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
@@ -95,8 +98,6 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .section-title { font-size:16px; font-weight:700; margin-bottom:12px; }
 .page { display:none; }
 .page.active { display:block; }
-
-/* 月曆樣式 */
 .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .cal-title { font-size:17px; font-weight:700; }
 .cal-nav { background:none; border:none; font-size:22px; cursor:pointer; color:var(--inc); padding:4px 10px; }
@@ -129,8 +130,6 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .cal-week-val { font-size:10px; font-weight:700; color:#185FA5; }
 .cal-day-detail { background:var(--card); border-radius:var(--radius); padding:12px 14px; margin-top:10px; border:0.5px solid var(--border); }
 .cal-day-detail-title { font-size:14px; font-weight:600; margin-bottom:10px; color:var(--text); }
-
-/* 行事曆備忘彈窗 */
 .memo-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:flex-end; }
 .memo-overlay.show { display:flex; }
 .memo-sheet { background:var(--card); border-radius:16px 16px 0 0; padding:20px 16px; width:100%; padding-bottom:calc(env(safe-area-inset-bottom) + 20px); }
@@ -148,7 +147,12 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 <body>
 <div class="header">
   <h1>🔑 鎖匠記帳</h1>
+  <div class="header-btns">
+    <button class="hdr-btn imp" onclick="importData()">📥 匯入</button>
+    <button class="hdr-btn" onclick="exportData()">📤 備份</button>
+  </div>
 </div>
+<input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)" />
 
 <!-- 總覽 -->
 <div class="content page active" id="page-home">
@@ -162,7 +166,6 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
     <div class="group-label" id="home-day-label">今日概況</div>
     <div class="metrics3" id="day-metrics"></div>
   </div>
-  <!-- 月曆直接嵌入總覽 -->
   <div class="card cal-card">
     <div class="cal-header">
       <button class="cal-nav" onclick="homeCalPrev()">‹</button>
@@ -174,7 +177,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
   <div id="home-cal-detail"></div>
 </div>
 
-<!-- 月曆頁（保留） -->
+<!-- 月曆頁 -->
 <div class="content page" id="page-cal">
   <div class="card cal-card">
     <div class="cal-header">
@@ -267,7 +270,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
   </div>
 </div>
 
-<!-- 行事曆備忘彈窗 -->
+<!-- 備忘彈窗 -->
 <div class="memo-overlay" id="memo-overlay" onclick="closeMemoIfBg(event)">
   <div class="memo-sheet">
     <h3 id="memo-sheet-title">📅 備忘</h3>
@@ -299,7 +302,7 @@ let queryTab = 'month';
 let calYear, calMonth;
 let homeCalYear, homeCalMonth;
 let memoDate = '';
-let memoContext = 'home'; // 'home' or 'cal'
+let memoContext = 'home';
 
 try { const s = localStorage.getItem('locksmith_pwa_v1'); if(s) records = JSON.parse(s); } catch(e) {}
 try { const s = localStorage.getItem('locksmith_memos_v1'); if(s) memos = JSON.parse(s); } catch(e) {}
@@ -307,10 +310,52 @@ function save() { try { localStorage.setItem('locksmith_pwa_v1', JSON.stringify(
 function saveMemos() { try { localStorage.setItem('locksmith_memos_v1', JSON.stringify(memos)); } catch(e) {} }
 
 const now = new Date();
-calYear = now.getFullYear();
-calMonth = now.getMonth();
-homeCalYear = now.getFullYear();
-homeCalMonth = now.getMonth();
+calYear = now.getFullYear(); calMonth = now.getMonth();
+homeCalYear = now.getFullYear(); homeCalMonth = now.getMonth();
+
+// ===== 備份 / 匯入 =====
+function exportData() {
+  const data = { records, memos, exportedAt: new Date().toISOString() };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `鎖匠記帳備份_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  document.getElementById('import-file').value = '';
+  document.getElementById('import-file').click();
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.records || !Array.isArray(data.records)) { alert('❌ 檔案格式錯誤'); return; }
+      const count = data.records.length;
+      if (!confirm(`找到 ${count} 筆記錄，確定要匯入？（會覆蓋現有資料）`)) return;
+      records = data.records;
+      memos = data.memos || {};
+      save();
+      saveMemos();
+      buildMonthOptions();
+      renderHome();
+      renderCal();
+      alert(`✅ 匯入成功！共 ${count} 筆記錄`);
+    } catch(err) {
+      alert('❌ 讀取失敗，請確認檔案格式正確');
+    }
+  };
+  reader.readAsText(file);
+}
 
 function switchPage(p) {
   ['home','cal','add','search'].forEach(n => {
@@ -325,7 +370,6 @@ function switchPage(p) {
 // ===== 總覽月曆 =====
 function homeCalPrev() { homeCalMonth--; if(homeCalMonth<0){homeCalMonth=11;homeCalYear--;} renderHomeCal(); }
 function homeCalNext() { homeCalMonth++; if(homeCalMonth>11){homeCalMonth=0;homeCalYear++;} renderHomeCal(); }
-
 function renderHomeCal(selectedDay) {
   _renderCalCore(homeCalYear, homeCalMonth, selectedDay, 'home-cal-title', 'home-cal-grid', 'home-cal-detail', 'home');
 }
@@ -333,7 +377,6 @@ function renderHomeCal(selectedDay) {
 // ===== 月曆頁 =====
 function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
 function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
-
 function renderCal(selectedDay) {
   _renderCalCore(calYear, calMonth, selectedDay, 'cal-title', 'cal-grid', 'cal-detail', 'cal');
 }
@@ -347,27 +390,22 @@ function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx
   const DOWS = ['日','一','二','三','四','五','六'];
   const monthStr = `${year}-${String(month+1).padStart(2,'0')}`;
   document.getElementById(titleId).textContent = `${year} 年 ${month+1} 月`;
-
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const daysInPrev  = new Date(year, month, 0).getDate();
   const today = new Date().toISOString().split('T')[0];
-
   const dayMap = {};
   records.filter(r=>r.date.slice(0,7)===monthStr).forEach(r=>{
     const d = r.date.split('-')[2];
     if (!dayMap[d]) dayMap[d] = [];
     dayMap[d].push(r);
   });
-
   const cells = [];
   const dowHtml = DOWS.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#D85A30':i===6?'color:#185FA5':''}">${d}</div>`).join('');
-
   for (let i=0; i<firstDay; i++) {
     const d = daysInPrev - firstDay + i + 1;
     cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
   }
-
   for (let d=1; d<=daysInMonth; d++) {
     const ds = String(d).padStart(2,'0');
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${ds}`;
@@ -376,63 +414,51 @@ function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx
     const isSel   = dateStr === selectedDay;
     const dow = (firstDay + d - 1) % 7;
     const numColor = dow===0 ? 'color:#D85A30' : dow===6 ? 'color:#185FA5' : '';
-
     let tagsHtml = '';
     recs.slice(0,2).forEach(r => {
       const short = r.name.length>4 ? r.name.slice(0,4)+'…' : r.name;
       tagsHtml += `<div class="cal-tag ${r.type==='income'?'inc':'exp'}">${r.icon||''} ${short}</div>`;
     });
     if (recs.length > 2) tagsHtml += `<div class="cal-tag inc">+${recs.length-2}筆</div>`;
-
     const dayMemos = memos[dateStr] || [];
     if (dayMemos.length > 0) {
       const memoShort = dayMemos[0].length>4 ? dayMemos[0].slice(0,4)+'…' : dayMemos[0];
       tagsHtml += `<div class="cal-tag memo">📌${memoShort}</div>`;
     }
-
     const dayIncome = recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
     const dayClass = dayIncome>=10000 ? ' day-gold' : dayIncome>=5000 ? ' day-green' : '';
     const selStyle = isSel ? 'outline:2px solid var(--inc);outline-offset:-2px;' : '';
-    cells.push(`<div class="cal-day${isToday?' today':''}${recs.length||dayMemos.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}','${ctx}')"><div class="cal-day-num" style="${numColor}">${d}</div><div class="cal-day-dot-wrap">${tagsHtml}</div></div>`);
+    cells.push(`<div class="cal-day${isToday?' today':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}','${ctx}')"><div class="cal-day-num" style="${numColor}">${d}</div><div class="cal-day-dot-wrap">${tagsHtml}</div></div>`);
   }
-
   const total = firstDay + daysInMonth;
   const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
   for (let d=1; d<=remain; d++) {
     cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
   }
-
   let html = `<div class="cal-dow-row">${dowHtml}</div>`;
   for (let w=0; w < cells.length/7; w++) {
     const weekCells = cells.slice(w*7, w*7+7);
     let wInc = 0;
     weekCells.forEach(cell => {
       const m = cell.match(/selectCalDay\('(\d{4}-\d{2}-\d{2})'/);
-      if (m) {
-        const dayRecs = records.filter(r=>r.date===m[1]&&r.type==='income');
-        wInc += dayRecs.reduce((s,r)=>s+r.amount,0);
-      }
+      if (m) { wInc += records.filter(r=>r.date===m[1]&&r.type==='income').reduce((s,r)=>s+r.amount,0); }
     });
     const wStr = wInc >= 10000 ? (wInc/10000).toFixed(1)+'萬' : wInc.toLocaleString();
     html += `<div class="cal-week">${weekCells.join('')}</div>`;
     html += `<div class="cal-week-row"><span class="cal-week-label">本週收入</span><span class="cal-week-val">${wInc>0?'+'+wStr:'—'}</span></div>`;
   }
-
   document.getElementById(gridId).innerHTML = html;
-
   if (selectedDay) {
     const dayRecs = records.filter(r=>r.date===selectedDay).sort((a,b)=>a.id-b.id);
     const dayMemoList = memos[selectedDay] || [];
     const dI = dayRecs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
     const dE = dayRecs.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
     const dN = dI-dE;
-
     const memoSection = dayMemoList.length ? `
       <div style="margin-bottom:10px">
         <div style="font-size:12px;color:var(--text2);margin-bottom:6px">📌 備忘事項</div>
         ${dayMemoList.map(m=>`<div style="font-size:13px;background:var(--bg);padding:6px 10px;border-radius:6px;margin-bottom:4px">${m}</div>`).join('')}
       </div>` : '';
-
     let detailHtml = `<div class="cal-day-detail">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="cal-day-detail-title" style="margin:0">📋 ${selectedDay} 明細</div>
@@ -445,11 +471,7 @@ function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx
         <div class="day-chip" style="flex:1"><div class="day-chip-label">結餘</div><div class="day-chip-val ${dN>=0?'c-pp':'c-pn'}">${dN>=0?'+':'-'}${fmt(dN)}</div></div>
       </div>
       <div class="record-list">`;
-    if (dayRecs.length) {
-      detailHtml += dayRecs.map(r=>itemHTML(r,'')).join('');
-    } else {
-      detailHtml += `<div class="empty" style="padding:1rem">當日無記錄</div>`;
-    }
+    detailHtml += dayRecs.length ? dayRecs.map(r=>itemHTML(r,'')).join('') : `<div class="empty" style="padding:1rem">當日無記錄</div>`;
     detailHtml += `</div></div>`;
     document.getElementById(detailId).innerHTML = detailHtml;
   } else {
@@ -457,72 +479,47 @@ function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx
   }
 }
 
-// ===== 備忘功能 =====
+// ===== 備忘 =====
 function openMemo(dateStr, ctx) {
-  memoDate = dateStr;
-  memoContext = ctx || 'home';
+  memoDate = dateStr; memoContext = ctx || 'home';
   document.getElementById('memo-sheet-title').textContent = `📅 ${dateStr} 備忘`;
   renderMemoList();
   document.getElementById('memo-overlay').classList.add('show');
   document.getElementById('memo-input').focus();
 }
-
 function closeMemo() {
   document.getElementById('memo-overlay').classList.remove('show');
   document.getElementById('memo-input').value = '';
 }
-
-function closeMemoIfBg(e) {
-  if (e.target === document.getElementById('memo-overlay')) closeMemo();
-}
-
+function closeMemoIfBg(e) { if (e.target === document.getElementById('memo-overlay')) closeMemo(); }
 function renderMemoList() {
   const list = memos[memoDate] || [];
   const el = document.getElementById('memo-list');
   if (!list.length) { el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:4px 0">暫無備忘</div>'; return; }
-  el.innerHTML = list.map((m,i) => `
-    <div class="memo-item">
-      <span class="memo-item-text">${m}</span>
-      <button class="memo-del" onclick="deleteMemo(${i})">🗑</button>
-    </div>`).join('');
+  el.innerHTML = list.map((m,i) => `<div class="memo-item"><span class="memo-item-text">${m}</span><button class="memo-del" onclick="deleteMemo(${i})">🗑</button></div>`).join('');
 }
-
 function addMemo() {
   const val = document.getElementById('memo-input').value.trim();
   if (!val) return;
   if (!memos[memoDate]) memos[memoDate] = [];
-  memos[memoDate].push(val);
-  saveMemos();
+  memos[memoDate].push(val); saveMemos();
   document.getElementById('memo-input').value = '';
   renderMemoList();
-  if (memoContext === 'home') renderHomeCal(memoDate);
-  else renderCal(memoDate);
+  if (memoContext === 'home') renderHomeCal(memoDate); else renderCal(memoDate);
 }
-
 function deleteMemo(idx) {
   memos[memoDate].splice(idx, 1);
   if (!memos[memoDate].length) delete memos[memoDate];
-  saveMemos();
-  renderMemoList();
-  if (memoContext === 'home') renderHomeCal(memoDate);
-  else renderCal(memoDate);
+  saveMemos(); renderMemoList();
+  if (memoContext === 'home') renderHomeCal(memoDate); else renderCal(memoDate);
 }
-
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('memo-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addMemo();
-  });
+  document.getElementById('memo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addMemo(); });
 });
 
 // ===== 表單 =====
-function onIncomeChange() {
-  if (document.getElementById('income-select').value) document.getElementById('expense-select').value='';
-  checkCustom();
-}
-function onExpenseChange() {
-  if (document.getElementById('expense-select').value) document.getElementById('income-select').value='';
-  checkCustom();
-}
+function onIncomeChange() { if (document.getElementById('income-select').value) document.getElementById('expense-select').value=''; checkCustom(); }
+function onExpenseChange() { if (document.getElementById('expense-select').value) document.getElementById('income-select').value=''; checkCustom(); }
 function checkCustom() {
   const iv = document.getElementById('income-select').value;
   const ev = document.getElementById('expense-select').value;
@@ -539,17 +536,16 @@ function getEntry() {
   const name = sel==='其他'?document.getElementById('inp-custom').value.trim():sel;
   return { type, name, icon:ICONS[sel]||'•' };
 }
-
 function addRecord() {
   const entry  = getEntry();
   const amount = parseFloat(document.getElementById('inp-amount').value);
   const date   = document.getElementById('inp-date').value;
   const note   = document.getElementById('inp-note').value.trim();
   const phone  = document.getElementById('inp-phone').value.trim();
-  if (!entry)               { alert('請選擇收入或支出項目'); return; }
-  if (!entry.name)          { alert('請填寫自訂項目名稱'); return; }
-  if (!amount||amount<=0)   { alert('請填寫正確金額'); return; }
-  if (!date)                { alert('請選擇日期'); return; }
+  if (!entry)             { alert('請選擇收入或支出項目'); return; }
+  if (!entry.name)        { alert('請填寫自訂項目名稱'); return; }
+  if (!amount||amount<=0) { alert('請填寫正確金額'); return; }
+  if (!date)              { alert('請選擇日期'); return; }
   records.push({ id:Date.now(), type:entry.type, name:entry.name, icon:entry.icon, amount, date, note, phone });
   save();
   document.getElementById('income-select').value='';
@@ -558,25 +554,19 @@ function addRecord() {
   document.getElementById('inp-amount').value='';
   document.getElementById('inp-note').value='';
   document.getElementById('inp-phone').value='';
-  checkCustom();
-  buildMonthOptions();
+  checkCustom(); buildMonthOptions();
   alert('✅ 新增成功！');
   switchPage('home');
 }
-
 function deleteRecord(id) {
   if (!confirm('確定刪除這筆記錄？')) return;
-  records = records.filter(r=>r.id!==id);
-  save();
-  buildMonthOptions();
-  renderHome();
+  records = records.filter(r=>r.id!==id); save();
+  buildMonthOptions(); renderHome();
   if (document.getElementById('page-cal').classList.contains('active')) renderCal();
   renderQuery();
 }
-
 function editRecord(id) {
-  const r = records.find(x=>x.id===id);
-  if (!r) return;
+  const r = records.find(x=>x.id===id); if (!r) return;
   switchPage('add');
   setTimeout(()=>{
     if (r.type==='income') {
@@ -593,13 +583,11 @@ function editRecord(id) {
     document.getElementById('inp-date').value=r.date;
     document.getElementById('inp-note').value=r.note||'';
     document.getElementById('inp-phone').value=r.phone||'';
-    records=records.filter(x=>x.id!==id);
-    save();
+    records=records.filter(x=>x.id!==id); save();
   },50);
 }
 
 function fmt(n) { return Math.abs(Math.round(n)).toLocaleString(); }
-
 function buildMonthOptions() {
   const sel=document.getElementById('filter-month');
   const prev=sel.value;
@@ -609,7 +597,6 @@ function buildMonthOptions() {
   sel.innerHTML=arr.map(m=>`<option value="${m}">${m.replace('-','年')}月</option>`).join('');
   if (prev&&arr.includes(prev)) sel.value=prev;
 }
-
 function itemHTML(r,kw) {
   function hl(t) {
     if (!kw) return t;
@@ -620,19 +607,17 @@ function itemHTML(r,kw) {
   const sign=r.type==='income'?'+':'-';
   const phoneStr=r.phone?`<span style="color:var(--inc);margin-left:4px">📞 ${hl(r.phone)}</span>`:'';
   const noteStr = r.note ? ' · ' + hl(r.note) : '';
-  return `
-    <div class="item">
-      <div class="item-icon ${r.type==='income'?'icon-i':'icon-e'}">${r.icon||'🔑'}</div>
-      <div class="item-info">
-        <div class="item-name">${hl(r.name)}</div>
-        <div class="item-meta">${r.date}${noteStr}${phoneStr}</div>
-      </div>
-      <div class="item-amt" style="color:${color}">${sign}${r.amount.toLocaleString()}</div>
-      <button class="del-btn" onclick="editRecord(${r.id})" style="font-size:17px">✏️</button>
-      <button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>
-    </div>`;
+  return `<div class="item">
+    <div class="item-icon ${r.type==='income'?'icon-i':'icon-e'}">${r.icon||'🔑'}</div>
+    <div class="item-info">
+      <div class="item-name">${hl(r.name)}</div>
+      <div class="item-meta">${r.date}${noteStr}${phoneStr}</div>
+    </div>
+    <div class="item-amt" style="color:${color}">${sign}${r.amount.toLocaleString()}</div>
+    <button class="del-btn" onclick="editRecord(${r.id})" style="font-size:17px">✏️</button>
+    <button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>
+  </div>`;
 }
-
 function renderBreakdown(subset,label) {
   document.getElementById('stat-badge').textContent=label;
   const nameMap={};
@@ -642,21 +627,14 @@ function renderBreakdown(subset,label) {
   const bdEl=document.getElementById('breakdown');
   if (!cats.length) { bdEl.innerHTML='<div class="empty">暫無資料</div>'; return; }
   bdEl.innerHTML=cats.map(([name,vals])=>{
-    const total=vals.income+vals.expense;
-    const pct=Math.round(total/maxVal*100);
+    const total=vals.income+vals.expense; const pct=Math.round(total/maxVal*100);
     const isInc=vals.income>=vals.expense;
-    return `<div class="bd-row">
-      <div class="bd-label">${name}</div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${isInc?'#5DCAA5':'#F0997B'}"></div></div>
-      <div class="bd-amt" style="color:${isInc?'var(--inc-fg)':'var(--exp-fg)'}">${isInc?'+':'-'}${fmt(total)}</div>
-    </div>`;
+    return `<div class="bd-row"><div class="bd-label">${name}</div><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${isInc?'#5DCAA5':'#F0997B'}"></div></div><div class="bd-amt" style="color:${isInc?'var(--inc-fg)':'var(--exp-fg)'}">${isInc?'+':'-'}${fmt(total)}</div></div>`;
   }).join('');
 }
-
 function renderHome() {
   const today=new Date().toISOString().split('T')[0];
-  const nowMonth=today.slice(0,7);
-  const nowYear=today.slice(0,4);
+  const nowMonth=today.slice(0,7); const nowYear=today.slice(0,4);
   document.getElementById('home-year-label').textContent=nowYear+' 年度概況';
   const yearly=records.filter(r=>r.date.slice(0,4)===nowYear);
   const yI=yearly.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
@@ -686,7 +664,6 @@ function renderHome() {
     <div class="metric"><div class="metric-label">日利潤</div><div class="metric-value ${dN>=0?'c-pp':'c-pn'}">${dN>=0?'+':'-'}${fmt(dN)}</div></div>`;
   renderHomeCal();
 }
-
 function switchQueryTab(tab) {
   queryTab=tab;
   ['month','day','kw'].forEach(t=>{
@@ -696,7 +673,6 @@ function switchQueryTab(tab) {
   document.getElementById('bd-card').style.display=tab==='kw'?'none':'';
   renderQuery();
 }
-
 function renderQuery() {
   buildMonthOptions();
   if (queryTab==='month') {
@@ -733,7 +709,6 @@ function renderQuery() {
     renderSearch(document.getElementById('search-input').value.trim());
   }
 }
-
 function onSearchInput() {
   const kw=document.getElementById('search-input').value.trim();
   document.getElementById('search-clear').className='sc'+(kw?' show':'');
