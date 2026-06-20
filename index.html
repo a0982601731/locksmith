@@ -105,11 +105,10 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .cal-dow { text-align:center; font-size:11px; color:var(--text2); padding:4px 0 6px; font-weight:500; }
 .cal-dow:first-child { color:#D85A30; }
 .cal-dow:last-child { color:#185FA5; }
-.cal-day { border-radius:6px; padding:2px 1px; min-height:48px; cursor:pointer; position:relative; background:var(--bg); }
+.cal-day { border-radius:6px; padding:2px 1px; min-height:44px; cursor:pointer; position:relative; background:var(--bg); }
 .cal-day:active { opacity:0.7; }
 .cal-day.today { background:var(--inc-bg); }
 .cal-day.other-month { opacity:0.35; }
-.cal-day.has-record { }
 .cal-day-num { font-size:11px; font-weight:500; text-align:center; margin-bottom:1px; }
 .cal-day.today .cal-day-num { color:var(--inc); font-weight:700; }
 .cal-day-dot-wrap { display:flex; flex-direction:column; gap:1px; padding:0 1px; }
@@ -284,7 +283,6 @@ function renderCal(selectedDay) {
   const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
   const today = new Date().toISOString().split('T')[0];
 
-  // 當月記錄按日期分組
   const dayMap = {};
   records.filter(r=>r.date.slice(0,7)===monthStr).forEach(r=>{
     const d = r.date.split('-')[2];
@@ -294,13 +292,11 @@ function renderCal(selectedDay) {
 
   let html = DOWS.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#D85A30':i===6?'color:#185FA5':''}">${d}</div>`).join('');
 
-  // 前月補白
   for (let i=0; i<firstDay; i++) {
     const d = daysInPrev - firstDay + i + 1;
     html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
   }
 
-  // 本月
   for (let d=1; d<=daysInMonth; d++) {
     const ds = String(d).padStart(2,'0');
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${ds}`;
@@ -311,11 +307,11 @@ function renderCal(selectedDay) {
     const numColor = dow===0 ? 'color:#D85A30' : dow===6 ? 'color:#185FA5' : '';
 
     let tagsHtml = '';
-    recs.slice(0,3).forEach(r => {
+    recs.slice(0,2).forEach(r => {
       const short = r.name.length>4 ? r.name.slice(0,4)+'…' : r.name;
       tagsHtml += `<div class="cal-tag ${r.type==='income'?'inc':'exp'}">${r.icon||''} ${short}</div>`;
     });
-    if (recs.length > 3) tagsHtml += `<div class="cal-tag inc">+${recs.length-3}筆</div>`;
+    if (recs.length > 2) tagsHtml += `<div class="cal-tag inc">+${recs.length-2}筆</div>`;
 
     const selStyle = isSel ? 'outline:2px solid var(--inc);outline-offset:-2px;' : '';
     html += `<div class="cal-day${isToday?' today':''}${recs.length?' has-record':''}" style="${selStyle}" onclick="selectCalDay('${dateStr}')">
@@ -324,7 +320,6 @@ function renderCal(selectedDay) {
     </div>`;
   }
 
-  // 後月補白
   const total = firstDay + daysInMonth;
   const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
   for (let d=1; d<=remain; d++) {
@@ -333,7 +328,6 @@ function renderCal(selectedDay) {
 
   document.getElementById('cal-grid').innerHTML = html;
 
-  // 顯示選取日明細
   if (selectedDay) {
     const dayRecs = records.filter(r=>r.date===selectedDay).sort((a,b)=>a.id-b.id);
     const dI = dayRecs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
