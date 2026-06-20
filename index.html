@@ -12,9 +12,7 @@
 const manifestData = {
   name: "鎖匠記帳", short_name: "鎖匠記帳", description: "鎖匠外出工作記帳工具",
   start_url: "./", display: "standalone", background_color: "#ffffff", theme_color: "#1D9E75",
-  icons: [
-    { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%231D9E75'/%3E%3Ctext x='96' y='130' font-size='100' text-anchor='middle' fill='white'%3E%F0%9F%94%91%3C/text%3E%3C/svg%3E", sizes: "192x192", type: "image/svg+xml" }
-  ]
+  icons: [{ src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%231D9E75'/%3E%3Ctext x='96' y='130' font-size='100' text-anchor='middle' fill='white'%3E%F0%9F%94%91%3C/text%3E%3C/svg%3E", sizes: "192x192", type: "image/svg+xml" }]
 };
 const blob = new Blob([JSON.stringify(manifestData)], {type:'application/json'});
 const manifestURL = URL.createObjectURL(blob);
@@ -115,15 +113,34 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .cal-tag { font-size:7px; border-radius:2px; padding:0 1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
 .cal-tag.inc { background:var(--inc-bg); color:var(--inc-fg); }
 .cal-tag.exp { background:var(--exp-bg); color:var(--exp-fg); }
+.cal-tag.memo { background:#E8E0FF; color:#5B2D8E; }
 .cal-card { padding:12px 4px; }
+/* 業績變色 */
 .cal-day.day-gold { background: #B8860B !important; }
 .cal-day.day-gold .cal-day-num { color: #fff !important; font-weight:700; }
 .cal-day.day-gold .cal-tag { background: rgba(255,255,255,0.25) !important; color:#fff !important; }
 .cal-day.day-green { background: #1D9E75 !important; }
 .cal-day.day-green .cal-day-num { color: #fff !important; font-weight:700; }
 .cal-day.day-green .cal-tag { background: rgba(255,255,255,0.25) !important; color:#fff !important; }
+.cal-week-row { grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; padding:2px 6px 4px; background:var(--card); border-radius:4px; margin-bottom:1px; }
+.cal-week-label { font-size:9px; color:var(--text2); }
+.cal-week-val { font-size:10px; font-weight:700; color:#185FA5; }
 .cal-day-detail { background:var(--card); border-radius:var(--radius); padding:12px 14px; margin-top:10px; border:0.5px solid var(--border); }
 .cal-day-detail-title { font-size:14px; font-weight:600; margin-bottom:10px; color:var(--text); }
+
+/* 行事曆備忘彈窗 */
+.memo-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:flex-end; }
+.memo-overlay.show { display:flex; }
+.memo-sheet { background:var(--card); border-radius:16px 16px 0 0; padding:20px 16px; width:100%; padding-bottom:calc(env(safe-area-inset-bottom) + 20px); }
+.memo-sheet h3 { font-size:16px; font-weight:700; margin-bottom:12px; }
+.memo-list { margin-bottom:12px; display:flex; flex-direction:column; gap:6px; }
+.memo-item { display:flex; align-items:center; gap:8px; background:var(--bg); border-radius:8px; padding:8px 10px; }
+.memo-item-text { flex:1; font-size:14px; }
+.memo-del { background:none; border:none; cursor:pointer; font-size:16px; color:var(--text2); }
+.memo-input-row { display:flex; gap:8px; }
+.memo-input-row input { flex:1; padding:10px 12px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font-size:15px; font-family:inherit; }
+.memo-input-row button { padding:10px 16px; background:var(--inc); border:none; border-radius:var(--radius-sm); color:white; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+.memo-close { width:100%; padding:12px; background:var(--bg); border:none; border-radius:var(--radius-sm); color:var(--text2); font-size:15px; font-family:inherit; cursor:pointer; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -242,6 +259,19 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
   </div>
 </div>
 
+<!-- 行事曆備忘彈窗 -->
+<div class="memo-overlay" id="memo-overlay" onclick="closeMemoIfBg(event)">
+  <div class="memo-sheet">
+    <h3 id="memo-sheet-title">📅 備忘</h3>
+    <div class="memo-list" id="memo-list"></div>
+    <div class="memo-input-row">
+      <input type="text" id="memo-input" placeholder="新增備忘事項..." />
+      <button onclick="addMemo()">新增</button>
+    </div>
+    <button class="memo-close" onclick="closeMemo()">關閉</button>
+  </div>
+</div>
+
 <nav class="bottom-nav">
   <button class="nav-btn active" id="nav-home" onclick="switchPage('home')"><span class="nav-icon">🏠</span>總覽</button>
   <button class="nav-btn" id="nav-cal" onclick="switchPage('cal')"><span class="nav-icon">📅</span>月曆</button>
@@ -256,11 +286,15 @@ const ICONS = {
 };
 
 let records = [];
+let memos = {};   // { 'YYYY-MM-DD': ['備忘1','備忘2'] }
 let queryTab = 'month';
 let calYear, calMonth;
+let memoDate = '';
 
 try { const s = localStorage.getItem('locksmith_pwa_v1'); if(s) records = JSON.parse(s); } catch(e) {}
+try { const s = localStorage.getItem('locksmith_memos_v1'); if(s) memos = JSON.parse(s); } catch(e) {}
 function save() { try { localStorage.setItem('locksmith_pwa_v1', JSON.stringify(records)); } catch(e) {} }
+function saveMemos() { try { localStorage.setItem('locksmith_memos_v1', JSON.stringify(memos)); } catch(e) {} }
 
 const now = new Date();
 calYear = now.getFullYear();
@@ -290,6 +324,7 @@ function renderCal(selectedDay) {
   const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
   const today = new Date().toISOString().split('T')[0];
 
+  // 當月記錄按日期分組
   const dayMap = {};
   records.filter(r=>r.date.slice(0,7)===monthStr).forEach(r=>{
     const d = r.date.split('-')[2];
@@ -297,13 +332,26 @@ function renderCal(selectedDay) {
     dayMap[d].push(r);
   });
 
+  // 週收入計算：追蹤每週 (由日開始) 的收入
+  const weekIncome = {};  // key: 週的第一個日期(日) -> 累計收入
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds = String(d).padStart(2,'0');
+    const recs = dayMap[ds] || [];
+    const dow = (firstDay + d - 1) % 7;
+    const weekStart = d - dow; // 本週日的日數
+    if (!weekIncome[weekStart]) weekIncome[weekStart] = 0;
+    weekIncome[weekStart] += recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+  }
+
   let html = DOWS.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#D85A30':i===6?'color:#185FA5':''}">${d}</div>`).join('');
 
+  // 前月補白
   for (let i=0; i<firstDay; i++) {
     const d = daysInPrev - firstDay + i + 1;
     html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
   }
 
+  // 本月
   for (let d=1; d<=daysInMonth; d++) {
     const ds = String(d).padStart(2,'0');
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${ds}`;
@@ -312,38 +360,80 @@ function renderCal(selectedDay) {
     const isSel   = dateStr === selectedDay;
     const dow = (firstDay + d - 1) % 7;
     const numColor = dow===0 ? 'color:#D85A30' : dow===6 ? 'color:#185FA5' : '';
+    const isSat = dow === 6;  // 週六 = 每週最後一欄
 
     let tagsHtml = '';
+
+    // 記帳標籤 (最多2筆)
     recs.slice(0,2).forEach(r => {
       const short = r.name.length>4 ? r.name.slice(0,4)+'…' : r.name;
       tagsHtml += `<div class="cal-tag ${r.type==='income'?'inc':'exp'}">${r.icon||''} ${short}</div>`;
     });
     if (recs.length > 2) tagsHtml += `<div class="cal-tag inc">+${recs.length-2}筆</div>`;
 
+    // 備忘標籤
+    const dayMemos = memos[dateStr] || [];
+    if (dayMemos.length > 0) {
+      const memoShort = dayMemos[0].length>4 ? dayMemos[0].slice(0,4)+'…' : dayMemos[0];
+      tagsHtml += `<div class="cal-tag memo">📌${memoShort}</div>`;
+    }
+
+    // 業績變色
     const dayIncome = recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
     const dayClass = dayIncome>=10000 ? ' day-gold' : dayIncome>=5000 ? ' day-green' : '';
     const selStyle = isSel ? 'outline:2px solid var(--inc);outline-offset:-2px;' : '';
-    html += `<div class="cal-day${isToday?' today':''}${recs.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}')">
+
+    html += `<div class="cal-day${isToday?' today':''}${recs.length||dayMemos.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}')">
       <div class="cal-day-num" style="${numColor}">${d}</div>
       <div class="cal-day-dot-wrap">${tagsHtml}</div>
     </div>`;
+
+    // 週六後插入週小計橫列
+    if (isSat) {
+      const weekStart = d - 6;
+      const wInc = weekIncome[weekStart] || 0;
+      const wStr = wInc >= 10000 ? (wInc/10000).toFixed(1)+'萬' : wInc.toLocaleString();
+      html += `<div class="cal-week-row"><span class="cal-week-label">本週收入</span><span class="cal-week-val">${wInc>0?'+'+wStr:'—'}</span></div>`;
+    }
   }
 
+  // 後月補白 + 最後一週小計
   const total = firstDay + daysInMonth;
   const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
   for (let d=1; d<=remain; d++) {
     html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
   }
+  // 若最後一天不是週六，補上最後一週小計
+  if (remain > 0) {
+    const lastDow = (firstDay + daysInMonth - 1) % 7;
+    const lastWeekStart = daysInMonth - lastDow;
+    const wInc = weekIncome[lastWeekStart] || 0;
+    const wStr = wInc >= 10000 ? (wInc/10000).toFixed(1)+'萬' : wInc.toLocaleString();
+    html += `<div class="cal-week-row"><span class="cal-week-label">本週收入</span><span class="cal-week-val">${wInc>0?'+'+wStr:'—'}</span></div>`;
+  }
 
   document.getElementById('cal-grid').innerHTML = html;
 
+  // 顯示選取日明細
   if (selectedDay) {
     const dayRecs = records.filter(r=>r.date===selectedDay).sort((a,b)=>a.id-b.id);
+    const dayMemoList = memos[selectedDay] || [];
     const dI = dayRecs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
     const dE = dayRecs.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
     const dN = dI-dE;
+
+    const memoSection = dayMemoList.length ? `
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">📌 備忘事項</div>
+        ${dayMemoList.map(m=>`<div style="font-size:13px;background:var(--bg);padding:6px 10px;border-radius:6px;margin-bottom:4px">${m}</div>`).join('')}
+      </div>` : '';
+
     let detailHtml = `<div class="cal-day-detail">
-      <div class="cal-day-detail-title">📋 ${selectedDay} 明細</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="cal-day-detail-title" style="margin:0">📋 ${selectedDay} 明細</div>
+        <button onclick="openMemo('${selectedDay}')" style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit">📌 備忘</button>
+      </div>
+      ${memoSection}
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div class="day-chip" style="flex:1"><div class="day-chip-label">收入</div><div class="day-chip-val c-inc">+${fmt(dI)}</div></div>
         <div class="day-chip" style="flex:1"><div class="day-chip-label">支出</div><div class="day-chip-val c-exp">-${fmt(dE)}</div></div>
@@ -365,6 +455,61 @@ function renderCal(selectedDay) {
 function selectCalDay(dateStr) {
   renderCal(dateStr);
 }
+
+// ===== 備忘功能 =====
+function openMemo(dateStr) {
+  memoDate = dateStr;
+  document.getElementById('memo-sheet-title').textContent = `📅 ${dateStr} 備忘`;
+  renderMemoList();
+  document.getElementById('memo-overlay').classList.add('show');
+  document.getElementById('memo-input').focus();
+}
+
+function closeMemo() {
+  document.getElementById('memo-overlay').classList.remove('show');
+  document.getElementById('memo-input').value = '';
+}
+
+function closeMemoIfBg(e) {
+  if (e.target === document.getElementById('memo-overlay')) closeMemo();
+}
+
+function renderMemoList() {
+  const list = memos[memoDate] || [];
+  const el = document.getElementById('memo-list');
+  if (!list.length) { el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:4px 0">暫無備忘</div>'; return; }
+  el.innerHTML = list.map((m,i) => `
+    <div class="memo-item">
+      <span class="memo-item-text">${m}</span>
+      <button class="memo-del" onclick="deleteMemo(${i})">🗑</button>
+    </div>`).join('');
+}
+
+function addMemo() {
+  const val = document.getElementById('memo-input').value.trim();
+  if (!val) return;
+  if (!memos[memoDate]) memos[memoDate] = [];
+  memos[memoDate].push(val);
+  saveMemos();
+  document.getElementById('memo-input').value = '';
+  renderMemoList();
+  renderCal(memoDate);
+}
+
+function deleteMemo(idx) {
+  memos[memoDate].splice(idx, 1);
+  if (!memos[memoDate].length) delete memos[memoDate];
+  saveMemos();
+  renderMemoList();
+  renderCal(memoDate);
+}
+
+// Enter 鍵新增備忘
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('memo-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addMemo();
+  });
+});
 
 // ===== 表單 =====
 function onIncomeChange() {
@@ -471,12 +616,14 @@ function itemHTML(r,kw) {
   const color=r.type==='income'?'var(--inc)':'var(--exp)';
   const sign=r.type==='income'?'+':'-';
   const phoneStr=r.phone?`<span style="color:var(--inc);margin-left:4px">📞 ${hl(r.phone)}</span>`:'';
+  // 地圖連結：備註有地址就加連結
+  const noteStr = r.note ? ` · <a class="map-link" href="https://maps.google.com/?q=${encodeURIComponent(r.note)}" target="_blank">📍${hl(r.note)}</a>` : '';
   return `
     <div class="item">
       <div class="item-icon ${r.type==='income'?'icon-i':'icon-e'}">${r.icon||'🔑'}</div>
       <div class="item-info">
         <div class="item-name">${hl(r.name)}</div>
-        <div class="item-meta">${r.date}${r.note?' · '+hl(r.note):''}${phoneStr}</div>
+        <div class="item-meta">${r.date}${noteStr}${phoneStr}</div>
       </div>
       <div class="item-amt" style="color:${color}">${sign}${r.amount.toLocaleString()}</div>
       <button class="del-btn" onclick="editRecord(${r.id})" style="font-size:17px">✏️</button>
