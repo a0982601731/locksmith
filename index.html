@@ -635,7 +635,11 @@ function itemHTML(r,kw) {
 function renderBreakdown(subset,label) {
   document.getElementById('stat-badge').textContent=label;
   const nameMap={};
-  subset.forEach(r=>{ if(!nameMap[r.name])nameMap[r.name]={income:0,expense:0}; nameMap[r.name][r.type]+=r.amount; });
+  subset.forEach(r=>{
+    if(!nameMap[r.name])nameMap[r.name]={income:0,expense:0,count:0};
+    nameMap[r.name][r.type]+=r.amount;
+    nameMap[r.name].count++;
+  });
   const cats=Object.entries(nameMap).sort((a,b)=>(b[1].income+b[1].expense)-(a[1].income+a[1].expense));
   const maxVal=Math.max(...cats.map(([,v])=>v.income+v.expense),1);
   const bdEl=document.getElementById('breakdown');
@@ -643,7 +647,11 @@ function renderBreakdown(subset,label) {
   bdEl.innerHTML=cats.map(([name,vals])=>{
     const total=vals.income+vals.expense; const pct=Math.round(total/maxVal*100);
     const isInc=vals.income>=vals.expense;
-    return `<div class="bd-row"><div class="bd-label">${name}</div><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${isInc?'#5DCAA5':'#F0997B'}"></div></div><div class="bd-amt" style="color:${isInc?'var(--inc-fg)':'var(--exp-fg)'}">${isInc?'+':'-'}${fmt(total)}</div></div>`;
+    return `<div class="bd-row">
+      <div class="bd-label">${name}<br><span style="font-size:10px;color:var(--text2);font-weight:400">${vals.count}筆</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${isInc?'#5DCAA5':'#F0997B'}"></div></div>
+      <div class="bd-amt" style="color:${isInc?'var(--inc-fg)':'var(--exp-fg)'}">${isInc?'+':'-'}${fmt(total)}</div>
+    </div>`;
   }).join('');
 }
 function renderHome() {
