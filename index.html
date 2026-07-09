@@ -199,8 +199,9 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
         <label>收入項目</label>
         <select id="income-select" onchange="onIncomeChange()">
           <option value="">— 請選擇 —</option>
-          <option>汽車開鎖</option><option>機車開鎖</option><option>門鎖開鎖</option>
+          <option>汽車開鎖</option><option>機車開鎖</option><option>機車無鑰配鎖</option><option>門鎖開鎖</option>
           <option>門鎖安裝</option><option>電子鎖安裝</option><option>電子鎖開鎖</option>
+          <option>幫同行代工</option>
           <option value="其他">其他</option>
         </select>
       </div>
@@ -209,6 +210,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
         <select id="expense-select" onchange="onExpenseChange()">
           <option value="">— 請選擇 —</option>
           <option>工具購買</option><option>鎖的成本</option><option>額外支出</option>
+          <option>委託同行代工</option>
           <option value="其他">其他</option>
         </select>
       </div>
@@ -292,8 +294,8 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 
 <script>
 const ICONS = {
-  '汽車開鎖':'🚗','機車開鎖':'🛵','門鎖開鎖':'🚪','門鎖安裝':'🔧','電子鎖安裝':'💻','電子鎖開鎖':'🔓',
-  '工具購買':'🔧','鎖的成本':'🔒','額外支出':'💵','其他':'•'
+  '汽車開鎖':'🚗','機車開鎖':'🛵','機車無鑰配鎖':'🔑','門鎖開鎖':'🚪','門鎖安裝':'🔧','電子鎖安裝':'💻','電子鎖開鎖':'🔓','幫同行代工':'🤝',
+  '工具購買':'🔧','鎖的成本':'🔒','額外支出':'💵','委託同行代工':'💸','其他':'•'
 };
 
 let records = [];
