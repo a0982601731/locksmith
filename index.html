@@ -246,6 +246,9 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
           <option value="all">全部</option><option value="income">僅收入</option><option value="expense">僅支出</option>
         </select>
       </div>
+      <div id="query-month-metrics-wrap" style="display:none;margin-bottom:12px">
+        <div class="metrics3" id="query-month-metrics"></div>
+      </div>
     </div>
     <div id="qpane-day" style="display:none">
       <div class="filter-row">
@@ -693,6 +696,7 @@ function switchQueryTab(tab) {
     document.getElementById('qpane-'+t).style.display=t===tab?'':'none';
   });
   document.getElementById('bd-card').style.display=tab==='kw'?'none':'';
+  if (tab!=='month') document.getElementById('query-month-metrics-wrap').style.display='none';
   renderQuery();
 }
 function renderQuery() {
@@ -701,6 +705,14 @@ function renderQuery() {
     const month=document.getElementById('filter-month').value;
     const typeF=document.getElementById('filter-type').value;
     const monthly=records.filter(r=>r.date.slice(0,7)===month);
+    const mI=monthly.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+    const mE=monthly.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
+    const mN=mI-mE;
+    document.getElementById('query-month-metrics').innerHTML=`
+      <div class="metric"><div class="metric-label">月營收</div><div class="metric-value c-inc">+${fmt(mI)}</div></div>
+      <div class="metric"><div class="metric-label">月支出</div><div class="metric-value c-exp">-${fmt(mE)}</div></div>
+      <div class="metric"><div class="metric-label">月利潤</div><div class="metric-value ${mN>=0?'c-pp':'c-pn'}">${mN>=0?'+':'-'}${fmt(mN)}</div></div>`;
+    document.getElementById('query-month-metrics-wrap').style.display='';
     const filtered=monthly.filter(r=>typeF==='all'||r.type===typeF);
     const sorted=[...filtered].sort((a,b)=>b.date.localeCompare(a.date));
     document.getElementById('query-list').innerHTML=sorted.length?sorted.map(r=>itemHTML(r,'')).join(''):'<div class="empty">本月無記錄</div>';
