@@ -157,6 +157,15 @@ button { font-family:inherit; }
 .d-edit { background:var(--bg); color:var(--text); border:0.5px solid var(--border) !important; }
 .d-del { background:var(--exp-bg); color:var(--exp); }
 
+.mt-head,.mt-row { display:grid; grid-template-columns:48px 1fr 1fr 1fr; gap:4px; padding:10px 6px; align-items:center; font-size:13px; text-align:right; }
+.mt-head { color:var(--text2); font-size:11px; border-bottom:0.5px solid var(--border); }
+.mt-head span:first-child,.mt-row .mt-m { text-align:left; }
+.mt-row { border-bottom:0.5px solid var(--border); cursor:pointer; font-weight:600; }
+.mt-row:active { opacity:0.7; }
+.mt-row.sel { background:var(--inc-bg); border-radius:8px; border-bottom-color:transparent; }
+.mt-m { color:var(--text); }
+.mt-none { grid-column:2 / 5; text-align:center; color:var(--text2); font-weight:400; }
+
 /* 備份 */
 .bk-stat { display:flex; justify-content:space-between; padding:10px 4px; border-bottom:0.5px solid var(--border); font-size:14px; }
 .bk-stat:last-of-type { border-bottom:none; }
@@ -192,6 +201,11 @@ button { font-family:inherit; }
     <div class="cal-legend">日收入 ≥ 5,000 綠底　≥ 10,000 金底</div>
   </div>
   <div id="cal-detail"></div>
+  <div class="card">
+    <div class="section-title" id="mt-title"></div>
+    <div id="mt-body"></div>
+    <div class="bk-tip" style="margin-top:8px">點任一個月份，上面的月概況和月曆會跳到那個月</div>
+  </div>
 </div>
 
 <!-- 新增 / 編輯 -->
@@ -232,6 +246,7 @@ button { font-family:inherit; }
         <select id="filter-month" onchange="renderQuery()"></select>
         <select id="filter-type" onchange="renderQuery()"><option value="all">全部</option><option value="income">僅收入</option><option value="expense">僅支出</option></select>
       </div>
+      <div class="day-chips" id="month-chips"></div>
     </div>
     <div id="qpane-day" style="display:none">
       <div class="filter-row">
@@ -372,15 +387,30 @@ function metrics(list, a, b, c) {
 }
 
 function renderHome() {
-  const today = todayStr(), mon = today.slice(0, 7), yr = today.slice(0, 4);
+  const today = todayStr(), mon = `${calYear}-${pad(calMonth + 1)}`, yr = String(calYear);
   $('lbl-year').textContent = yr + ' 年度概況';
-  $('lbl-month').textContent = mon.replace('-', ' 年 ') + ' 月概況';
+  $('lbl-month').textContent = `${calYear} 年 ${calMonth + 1} 月概況`;
   $('lbl-day').textContent = today.replace(/-/g, '/') + '　今日概況';
   $('m-year').innerHTML  = metrics(records.filter(r => r.date.startsWith(yr)),  '年營收', '年支出', '年利潤');
   $('m-month').innerHTML = metrics(records.filter(r => r.date.startsWith(mon)), '月營收', '月支出', '月利潤');
   $('m-day').innerHTML   = metrics(records.filter(r => r.date === today),       '日營收', '日支出', '日利潤');
   renderNotice();
+  renderMonthTable();
   renderCal();
+}
+
+function renderMonthTable() {
+  $('mt-title').textContent = `📊 ${calYear} 各月份收支`;
+  let html = '<div class="mt-head"><span>月份</span><span>收入</span><span>支出</span><span>利潤</span></div>';
+  for (let m = 1; m <= 12; m++) {
+    const list = records.filter(r => r.date.startsWith(`${calYear}-${pad(m)}`));
+    const i = sum(list, 'income'), e = sum(list, 'expense'), p = i - e;
+    html += `<div class="mt-row${m - 1 === calMonth ? ' sel' : ''}" onclick="goMonth(${m - 1})"><span class="mt-m">${m} 月</span>` +
+      (list.length
+        ? `<span class="c-inc">+${fmt(i)}</span><span class="c-exp">-${fmt(e)}</span><span class="${p >= 0 ? 'c-pp' : 'c-pn'}">${p >= 0 ? '+' : '-'}${fmt(p)}</span>`
+        : `<span class="mt-none">— 無記錄</span>`) + '</div>';
+  }
+  $('mt-body').innerHTML = html;
 }
 
 function renderNotice() {
@@ -399,8 +429,10 @@ function calMove(d) {
   if (calMonth < 0) { calMonth = 11; calYear--; }
   if (calMonth > 11) { calMonth = 0; calYear++; }
   selDay = null;
-  renderCal();
+  renderHome();
 }
+
+function goMonth(m) { calMonth = m; selDay = null; renderHome(); window.scrollTo(0, 0); }
 
 function renderCal() {
   const y = calYear, m = calMonth, prefix = `${y}-${pad(m + 1)}-`;
@@ -658,6 +690,10 @@ function renderQuery() {
   if (queryTab === 'month') {
     const month = $('filter-month').value, typeF = $('filter-type').value;
     const monthly = records.filter(r => r.date.startsWith(month));
+    const mi = sum(monthly, 'income'), me = sum(monthly, 'expense'), mn = mi - me;
+    $('month-chips').innerHTML = `<div class="day-chip"><div class="day-chip-label">當月收入</div><div class="day-chip-val c-inc">+${fmt(mi)}</div></div>
+      <div class="day-chip"><div class="day-chip-label">當月支出</div><div class="day-chip-val c-exp">-${fmt(me)}</div></div>
+      <div class="day-chip"><div class="day-chip-label">當月結餘</div><div class="day-chip-val ${mn >= 0 ? 'c-pp' : 'c-pn'}">${mn >= 0 ? '+' : '-'}${fmt(mn)}</div></div>`;
     const rows = monthly.filter(r => typeF === 'all' || r.type === typeF).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
     list.innerHTML = rows.length ? rows.map(r => itemHTML(r)).join('') : '<div class="empty">本月無記錄</div>';
     renderBreakdown(monthly, month.replace('-', ' 年 ') + ' 月');
