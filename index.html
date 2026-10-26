@@ -34,9 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
 html,body { height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
 .header { background:var(--card); border-bottom:0.5px solid var(--border); padding:14px 16px; position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
 .header h1 { font-size:19px; font-weight:700; }
-.header-btns { display:flex; gap:8px; }
-.hdr-btn { background:none; border:0.5px solid var(--border); border-radius:8px; padding:5px 10px; font-size:12px; color:var(--text); cursor:pointer; font-family:inherit; white-space:nowrap; }
-.hdr-btn.imp { color:var(--inc); border-color:var(--inc); }
 .content { padding:8px 8px 100px; max-width:480px; margin:0 auto; }
 .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:var(--card); border-top:0.5px solid var(--border); display:flex; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
 .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 4px 6px; background:none; border:none; cursor:pointer; color:var(--text2); font-size:10px; font-family:inherit; }
@@ -86,7 +83,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .item-info { flex:1; min-width:0; }
 .item-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .item-meta { font-size:12px; color:var(--text2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.item-meta a { color:#ffffff; }
+.item-meta a { color: #ffffff; }
 .item-amt { font-size:15px; font-weight:600; flex-shrink:0; }
 .del-btn { background:none; border:none; cursor:pointer; color:var(--text2); font-size:20px; padding:4px; flex-shrink:0; }
 .bd-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
@@ -98,6 +95,8 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .section-title { font-size:16px; font-weight:700; margin-bottom:12px; }
 .page { display:none; }
 .page.active { display:block; }
+
+/* 月曆樣式 */
 .cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
 .cal-title { font-size:17px; font-weight:700; }
 .cal-nav { background:none; border:none; font-size:22px; cursor:pointer; color:var(--inc); padding:4px 10px; }
@@ -130,6 +129,8 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .cal-week-val { font-size:10px; font-weight:700; color:#185FA5; }
 .cal-day-detail { background:var(--card); border-radius:var(--radius); padding:12px 14px; margin-top:10px; border:0.5px solid var(--border); }
 .cal-day-detail-title { font-size:14px; font-weight:600; margin-bottom:10px; color:var(--text); }
+
+/* 行事曆備忘彈窗 */
 .memo-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:flex-end; }
 .memo-overlay.show { display:flex; }
 .memo-sheet { background:var(--card); border-radius:16px 16px 0 0; padding:20px 16px; width:100%; padding-bottom:calc(env(safe-area-inset-bottom) + 20px); }
@@ -142,17 +143,36 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 .memo-input-row input { flex:1; padding:10px 12px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font-size:15px; font-family:inherit; }
 .memo-input-row button { padding:10px 16px; background:var(--inc); border:none; border-radius:var(--radius-sm); color:white; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
 .memo-close { width:100%; padding:12px; background:var(--bg); border:none; border-radius:var(--radius-sm); color:var(--text2); font-size:15px; font-family:inherit; cursor:pointer; margin-top:8px; }
+
+/* 記錄詳細彈窗 */
+.detail-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:flex-end; }
+.detail-overlay.show { display:flex; }
+.detail-sheet { background:var(--card); border-radius:16px 16px 0 0; padding:20px 16px; width:100%; padding-bottom:calc(env(safe-area-inset-bottom) + 20px); max-height:80vh; overflow-y:auto; }
+.detail-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.detail-icon { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.detail-title-block { flex:1; }
+.detail-name { font-size:18px; font-weight:700; }
+.detail-type { font-size:12px; color:var(--text2); margin-top:2px; }
+.detail-amt-big { font-size:26px; font-weight:700; text-align:center; padding:12px 0; border-radius:var(--radius-sm); margin-bottom:14px; }
+.detail-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border); }
+.detail-row:last-of-type { border-bottom:none; }
+.detail-row-icon { font-size:16px; width:22px; flex-shrink:0; text-align:center; margin-top:1px; }
+.detail-row-label { font-size:12px; color:var(--text2); min-width:50px; flex-shrink:0; margin-top:1px; }
+.detail-row-val { font-size:15px; flex:1; word-break:break-all; }
+.detail-row-val a { color:var(--inc); text-decoration:none; }
+.detail-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.detail-act-btn { padding:12px; border:none; border-radius:var(--radius-sm); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; }
+.detail-edit { background:var(--bg); color:var(--text); border:0.5px solid var(--border); }
+.detail-del { background:#FAECE7; color:var(--exp); }
+.detail-close { width:100%; padding:12px; background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-sm); color:var(--text2); font-size:15px; font-family:inherit; cursor:pointer; margin-top:8px; }
+.item { cursor:pointer; }
+.item:active { opacity:0.8; }
 </style>
 </head>
 <body>
 <div class="header">
   <h1>🔑 鎖匠記帳</h1>
-  <div class="header-btns">
-    <button class="hdr-btn imp" onclick="importData()">📥 匯入</button>
-    <button class="hdr-btn" onclick="exportData()">📤 備份</button>
-  </div>
 </div>
-<input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)" />
 
 <!-- 總覽 -->
 <div class="content page active" id="page-home">
@@ -166,6 +186,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
     <div class="group-label" id="home-day-label">今日概況</div>
     <div class="metrics3" id="day-metrics"></div>
   </div>
+  <!-- 月曆直接嵌入總覽 -->
   <div class="card cal-card">
     <div class="cal-header">
       <button class="cal-nav" onclick="homeCalPrev()">‹</button>
@@ -177,7 +198,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
   <div id="home-cal-detail"></div>
 </div>
 
-<!-- 月曆頁 -->
+<!-- 月曆頁（保留） -->
 <div class="content page" id="page-cal">
   <div class="card cal-card">
     <div class="cal-header">
@@ -200,8 +221,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
         <select id="income-select" onchange="onIncomeChange()">
           <option value="">— 請選擇 —</option>
           <option>汽車開鎖</option><option>機車開鎖</option><option>機車無鑰配鎖</option><option>門鎖開鎖</option>
-          <option>門鎖安裝</option><option>電子鎖安裝</option><option>電子鎖開鎖</option>
-          <option>幫同行代工</option>
+          <option>門鎖安裝</option><option>電子鎖安裝</option><option>電子鎖開鎖</option><option>幫同行代工</option>
           <option value="其他">其他</option>
         </select>
       </div>
@@ -209,8 +229,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
         <label>支出項目</label>
         <select id="expense-select" onchange="onExpenseChange()">
           <option value="">— 請選擇 —</option>
-          <option>工具購買</option><option>鎖的成本</option><option>額外支出</option>
-          <option>委託同行代工</option>
+          <option>工具購買</option><option>鎖的成本</option><option>額外支出</option><option>委託同行代工</option>
           <option value="其他">其他</option>
         </select>
       </div>
@@ -246,9 +265,6 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
           <option value="all">全部</option><option value="income">僅收入</option><option value="expense">僅支出</option>
         </select>
       </div>
-      <div id="query-month-metrics-wrap" style="display:none;margin-bottom:12px">
-        <div class="metrics3" id="query-month-metrics"></div>
-      </div>
     </div>
     <div id="qpane-day" style="display:none">
       <div class="filter-row">
@@ -275,7 +291,27 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
   </div>
 </div>
 
-<!-- 備忘彈窗 -->
+<!-- 記錄詳細彈窗 -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetailIfBg(event)">
+  <div class="detail-sheet">
+    <div class="detail-header">
+      <div class="detail-icon" id="detail-icon"></div>
+      <div class="detail-title-block">
+        <div class="detail-name" id="detail-name"></div>
+        <div class="detail-type" id="detail-type"></div>
+      </div>
+    </div>
+    <div class="detail-amt-big" id="detail-amt"></div>
+    <div id="detail-rows"></div>
+    <div class="detail-actions">
+      <button class="detail-act-btn detail-edit" id="detail-edit-btn">✏️ 編輯</button>
+      <button class="detail-act-btn detail-del" id="detail-del-btn">🗑 刪除</button>
+    </div>
+    <button class="detail-close" onclick="closeDetail()">關閉</button>
+  </div>
+</div>
+
+<!-- 行事曆備忘彈窗 -->
 <div class="memo-overlay" id="memo-overlay" onclick="closeMemoIfBg(event)">
   <div class="memo-sheet">
     <h3 id="memo-sheet-title">📅 備忘</h3>
@@ -307,7 +343,7 @@ let queryTab = 'month';
 let calYear, calMonth;
 let homeCalYear, homeCalMonth;
 let memoDate = '';
-let memoContext = 'home';
+let memoContext = 'home'; // 'home' or 'cal'
 
 try { const s = localStorage.getItem('locksmith_pwa_v1'); if(s) records = JSON.parse(s); } catch(e) {}
 try { const s = localStorage.getItem('locksmith_memos_v1'); if(s) memos = JSON.parse(s); } catch(e) {}
@@ -315,64 +351,10 @@ function save() { try { localStorage.setItem('locksmith_pwa_v1', JSON.stringify(
 function saveMemos() { try { localStorage.setItem('locksmith_memos_v1', JSON.stringify(memos)); } catch(e) {} }
 
 const now = new Date();
-calYear = now.getFullYear(); calMonth = now.getMonth();
-homeCalYear = now.getFullYear(); homeCalMonth = now.getMonth();
-
-// ===== 備份 / 匯入 =====
-async function exportData() {
-  const data = { records, memos, exportedAt: new Date().toISOString() };
-  const json = JSON.stringify(data, null, 2);
-  const date = new Date().toISOString().slice(0,10);
-  const fileName = `鎖匠記帳備份_${date}.json`;
-  const blob = new Blob([json], { type: 'application/json' });
-  const file = new File([blob], fileName, { type: 'application/json' });
-  // 優先用分享選單（可選 LINE、AirDrop、iCloud 等）
-  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: '鎖匠記帳備份' });
-      return;
-    } catch(e) {
-      if (e.name === 'AbortError') return; // 使用者取消
-    }
-  }
-  // 降級：直接下載
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importData() {
-  document.getElementById('import-file').value = '';
-  document.getElementById('import-file').click();
-}
-
-function handleImport(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    try {
-      const data = JSON.parse(ev.target.result);
-      if (!data.records || !Array.isArray(data.records)) { alert('❌ 檔案格式錯誤'); return; }
-      const count = data.records.length;
-      if (!confirm(`找到 ${count} 筆記錄，確定要匯入？（會覆蓋現有資料）`)) return;
-      records = data.records;
-      memos = data.memos || {};
-      save();
-      saveMemos();
-      buildMonthOptions();
-      renderHome();
-      renderCal();
-      alert(`✅ 匯入成功！共 ${count} 筆記錄`);
-    } catch(err) {
-      alert('❌ 讀取失敗，請確認檔案格式正確');
-    }
-  };
-  reader.readAsText(file);
-}
+calYear = now.getFullYear();
+calMonth = now.getMonth();
+homeCalYear = now.getFullYear();
+homeCalMonth = now.getMonth();
 
 function switchPage(p) {
   ['home','cal','add','search'].forEach(n => {
@@ -387,6 +369,7 @@ function switchPage(p) {
 // ===== 總覽月曆 =====
 function homeCalPrev() { homeCalMonth--; if(homeCalMonth<0){homeCalMonth=11;homeCalYear--;} renderHomeCal(); }
 function homeCalNext() { homeCalMonth++; if(homeCalMonth>11){homeCalMonth=0;homeCalYear++;} renderHomeCal(); }
+
 function renderHomeCal(selectedDay) {
   _renderCalCore(homeCalYear, homeCalMonth, selectedDay, 'home-cal-title', 'home-cal-grid', 'home-cal-detail', 'home');
 }
@@ -394,6 +377,7 @@ function renderHomeCal(selectedDay) {
 // ===== 月曆頁 =====
 function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
 function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
+
 function renderCal(selectedDay) {
   _renderCalCore(calYear, calMonth, selectedDay, 'cal-title', 'cal-grid', 'cal-detail', 'cal');
 }
@@ -407,22 +391,27 @@ function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx
   const DOWS = ['日','一','二','三','四','五','六'];
   const monthStr = `${year}-${String(month+1).padStart(2,'0')}`;
   document.getElementById(titleId).textContent = `${year} 年 ${month+1} 月`;
+
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const daysInPrev  = new Date(year, month, 0).getDate();
   const today = new Date().toISOString().split('T')[0];
+
   const dayMap = {};
   records.filter(r=>r.date.slice(0,7)===monthStr).forEach(r=>{
     const d = r.date.split('-')[2];
     if (!dayMap[d]) dayMap[d] = [];
     dayMap[d].push(r);
   });
+
   const cells = [];
   const dowHtml = DOWS.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#D85A30':i===6?'color:#185FA5':''}">${d}</div>`).join('');
+
   for (let i=0; i<firstDay; i++) {
     const d = daysInPrev - firstDay + i + 1;
     cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
   }
+
   for (let d=1; d<=daysInMonth; d++) {
     const ds = String(d).padStart(2,'0');
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${ds}`;
@@ -431,51 +420,63 @@ function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx
     const isSel   = dateStr === selectedDay;
     const dow = (firstDay + d - 1) % 7;
     const numColor = dow===0 ? 'color:#D85A30' : dow===6 ? 'color:#185FA5' : '';
+
     let tagsHtml = '';
     recs.slice(0,2).forEach(r => {
       const short = r.name.length>4 ? r.name.slice(0,4)+'…' : r.name;
       tagsHtml += `<div class="cal-tag ${r.type==='income'?'inc':'exp'}">${r.icon||''} ${short}</div>`;
     });
     if (recs.length > 2) tagsHtml += `<div class="cal-tag inc">+${recs.length-2}筆</div>`;
+
     const dayMemos = memos[dateStr] || [];
     if (dayMemos.length > 0) {
       const memoShort = dayMemos[0].length>4 ? dayMemos[0].slice(0,4)+'…' : dayMemos[0];
       tagsHtml += `<div class="cal-tag memo">📌${memoShort}</div>`;
     }
+
     const dayIncome = recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
     const dayClass = dayIncome>=10000 ? ' day-gold' : dayIncome>=5000 ? ' day-green' : '';
     const selStyle = isSel ? 'outline:2px solid var(--inc);outline-offset:-2px;' : '';
-    cells.push(`<div class="cal-day${isToday?' today':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}','${ctx}')"><div class="cal-day-num" style="${numColor}">${d}</div><div class="cal-day-dot-wrap">${tagsHtml}</div></div>`);
+    cells.push(`<div class="cal-day${isToday?' today':''}${recs.length||dayMemos.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}','${ctx}')"><div class="cal-day-num" style="${numColor}">${d}</div><div class="cal-day-dot-wrap">${tagsHtml}</div></div>`);
   }
+
   const total = firstDay + daysInMonth;
   const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
   for (let d=1; d<=remain; d++) {
     cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
   }
+
   let html = `<div class="cal-dow-row">${dowHtml}</div>`;
   for (let w=0; w < cells.length/7; w++) {
     const weekCells = cells.slice(w*7, w*7+7);
     let wInc = 0;
     weekCells.forEach(cell => {
       const m = cell.match(/selectCalDay\('(\d{4}-\d{2}-\d{2})'/);
-      if (m) { wInc += records.filter(r=>r.date===m[1]&&r.type==='income').reduce((s,r)=>s+r.amount,0); }
+      if (m) {
+        const dayRecs = records.filter(r=>r.date===m[1]&&r.type==='income');
+        wInc += dayRecs.reduce((s,r)=>s+r.amount,0);
+      }
     });
     const wStr = wInc >= 10000 ? (wInc/10000).toFixed(1)+'萬' : wInc.toLocaleString();
     html += `<div class="cal-week">${weekCells.join('')}</div>`;
     html += `<div class="cal-week-row"><span class="cal-week-label">本週收入</span><span class="cal-week-val">${wInc>0?'+'+wStr:'—'}</span></div>`;
   }
+
   document.getElementById(gridId).innerHTML = html;
+
   if (selectedDay) {
     const dayRecs = records.filter(r=>r.date===selectedDay).sort((a,b)=>a.id-b.id);
     const dayMemoList = memos[selectedDay] || [];
     const dI = dayRecs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
     const dE = dayRecs.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
     const dN = dI-dE;
+
     const memoSection = dayMemoList.length ? `
       <div style="margin-bottom:10px">
         <div style="font-size:12px;color:var(--text2);margin-bottom:6px">📌 備忘事項</div>
         ${dayMemoList.map(m=>`<div style="font-size:13px;background:var(--bg);padding:6px 10px;border-radius:6px;margin-bottom:4px">${m}</div>`).join('')}
       </div>` : '';
+
     let detailHtml = `<div class="cal-day-detail">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="cal-day-detail-title" style="margin:0">📋 ${selectedDay} 明細</div>
@@ -488,7 +489,11 @@ function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx
         <div class="day-chip" style="flex:1"><div class="day-chip-label">結餘</div><div class="day-chip-val ${dN>=0?'c-pp':'c-pn'}">${dN>=0?'+':'-'}${fmt(dN)}</div></div>
       </div>
       <div class="record-list">`;
-    detailHtml += dayRecs.length ? dayRecs.map(r=>itemHTML(r,'')).join('') : `<div class="empty" style="padding:1rem">當日無記錄</div>`;
+    if (dayRecs.length) {
+      detailHtml += dayRecs.map(r=>itemHTML(r,'')).join('');
+    } else {
+      detailHtml += `<div class="empty" style="padding:1rem">當日無記錄</div>`;
+    }
     detailHtml += `</div></div>`;
     document.getElementById(detailId).innerHTML = detailHtml;
   } else {
@@ -496,47 +501,72 @@ function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx
   }
 }
 
-// ===== 備忘 =====
+// ===== 備忘功能 =====
 function openMemo(dateStr, ctx) {
-  memoDate = dateStr; memoContext = ctx || 'home';
+  memoDate = dateStr;
+  memoContext = ctx || 'home';
   document.getElementById('memo-sheet-title').textContent = `📅 ${dateStr} 備忘`;
   renderMemoList();
   document.getElementById('memo-overlay').classList.add('show');
   document.getElementById('memo-input').focus();
 }
+
 function closeMemo() {
   document.getElementById('memo-overlay').classList.remove('show');
   document.getElementById('memo-input').value = '';
 }
-function closeMemoIfBg(e) { if (e.target === document.getElementById('memo-overlay')) closeMemo(); }
+
+function closeMemoIfBg(e) {
+  if (e.target === document.getElementById('memo-overlay')) closeMemo();
+}
+
 function renderMemoList() {
   const list = memos[memoDate] || [];
   const el = document.getElementById('memo-list');
   if (!list.length) { el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:4px 0">暫無備忘</div>'; return; }
-  el.innerHTML = list.map((m,i) => `<div class="memo-item"><span class="memo-item-text">${m}</span><button class="memo-del" onclick="deleteMemo(${i})">🗑</button></div>`).join('');
+  el.innerHTML = list.map((m,i) => `
+    <div class="memo-item">
+      <span class="memo-item-text">${m}</span>
+      <button class="memo-del" onclick="deleteMemo(${i})">🗑</button>
+    </div>`).join('');
 }
+
 function addMemo() {
   const val = document.getElementById('memo-input').value.trim();
   if (!val) return;
   if (!memos[memoDate]) memos[memoDate] = [];
-  memos[memoDate].push(val); saveMemos();
+  memos[memoDate].push(val);
+  saveMemos();
   document.getElementById('memo-input').value = '';
   renderMemoList();
-  if (memoContext === 'home') renderHomeCal(memoDate); else renderCal(memoDate);
+  if (memoContext === 'home') renderHomeCal(memoDate);
+  else renderCal(memoDate);
 }
+
 function deleteMemo(idx) {
   memos[memoDate].splice(idx, 1);
   if (!memos[memoDate].length) delete memos[memoDate];
-  saveMemos(); renderMemoList();
-  if (memoContext === 'home') renderHomeCal(memoDate); else renderCal(memoDate);
+  saveMemos();
+  renderMemoList();
+  if (memoContext === 'home') renderHomeCal(memoDate);
+  else renderCal(memoDate);
 }
+
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('memo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addMemo(); });
+  document.getElementById('memo-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addMemo();
+  });
 });
 
 // ===== 表單 =====
-function onIncomeChange() { if (document.getElementById('income-select').value) document.getElementById('expense-select').value=''; checkCustom(); }
-function onExpenseChange() { if (document.getElementById('expense-select').value) document.getElementById('income-select').value=''; checkCustom(); }
+function onIncomeChange() {
+  if (document.getElementById('income-select').value) document.getElementById('expense-select').value='';
+  checkCustom();
+}
+function onExpenseChange() {
+  if (document.getElementById('expense-select').value) document.getElementById('income-select').value='';
+  checkCustom();
+}
 function checkCustom() {
   const iv = document.getElementById('income-select').value;
   const ev = document.getElementById('expense-select').value;
@@ -553,16 +583,17 @@ function getEntry() {
   const name = sel==='其他'?document.getElementById('inp-custom').value.trim():sel;
   return { type, name, icon:ICONS[sel]||'•' };
 }
+
 function addRecord() {
   const entry  = getEntry();
   const amount = parseFloat(document.getElementById('inp-amount').value);
   const date   = document.getElementById('inp-date').value;
   const note   = document.getElementById('inp-note').value.trim();
   const phone  = document.getElementById('inp-phone').value.trim();
-  if (!entry)             { alert('請選擇收入或支出項目'); return; }
-  if (!entry.name)        { alert('請填寫自訂項目名稱'); return; }
-  if (!amount||amount<=0) { alert('請填寫正確金額'); return; }
-  if (!date)              { alert('請選擇日期'); return; }
+  if (!entry)               { alert('請選擇收入或支出項目'); return; }
+  if (!entry.name)          { alert('請填寫自訂項目名稱'); return; }
+  if (!amount||amount<=0)   { alert('請填寫正確金額'); return; }
+  if (!date)                { alert('請選擇日期'); return; }
   records.push({ id:Date.now(), type:entry.type, name:entry.name, icon:entry.icon, amount, date, note, phone });
   save();
   document.getElementById('income-select').value='';
@@ -571,19 +602,25 @@ function addRecord() {
   document.getElementById('inp-amount').value='';
   document.getElementById('inp-note').value='';
   document.getElementById('inp-phone').value='';
-  checkCustom(); buildMonthOptions();
+  checkCustom();
+  buildMonthOptions();
   alert('✅ 新增成功！');
   switchPage('home');
 }
+
 function deleteRecord(id) {
   if (!confirm('確定刪除這筆記錄？')) return;
-  records = records.filter(r=>r.id!==id); save();
-  buildMonthOptions(); renderHome();
+  records = records.filter(r=>r.id!==id);
+  save();
+  buildMonthOptions();
+  renderHome();
   if (document.getElementById('page-cal').classList.contains('active')) renderCal();
   renderQuery();
 }
+
 function editRecord(id) {
-  const r = records.find(x=>x.id===id); if (!r) return;
+  const r = records.find(x=>x.id===id);
+  if (!r) return;
   switchPage('add');
   setTimeout(()=>{
     if (r.type==='income') {
@@ -600,11 +637,13 @@ function editRecord(id) {
     document.getElementById('inp-date').value=r.date;
     document.getElementById('inp-note').value=r.note||'';
     document.getElementById('inp-phone').value=r.phone||'';
-    records=records.filter(x=>x.id!==id); save();
+    records=records.filter(x=>x.id!==id);
+    save();
   },50);
 }
 
 function fmt(n) { return Math.abs(Math.round(n)).toLocaleString(); }
+
 function buildMonthOptions() {
   const sel=document.getElementById('filter-month');
   const prev=sel.value;
@@ -614,6 +653,47 @@ function buildMonthOptions() {
   sel.innerHTML=arr.map(m=>`<option value="${m}">${m.replace('-','年')}月</option>`).join('');
   if (prev&&arr.includes(prev)) sel.value=prev;
 }
+
+function openDetail(id) {
+  const r = records.find(x=>x.id===id);
+  if (!r) return;
+  const isInc = r.type==='income';
+  document.getElementById('detail-icon').className = 'detail-icon ' + (isInc?'icon-i':'icon-e');
+  document.getElementById('detail-icon').textContent = r.icon||'🔑';
+  document.getElementById('detail-name').textContent = r.name;
+  document.getElementById('detail-type').textContent = isInc ? '💰 收入' : '💸 支出';
+  const amtEl = document.getElementById('detail-amt');
+  amtEl.textContent = (isInc?'+':'-') + r.amount.toLocaleString() + ' 元';
+  amtEl.style.background = isInc ? 'var(--inc-bg)' : 'var(--exp-bg)';
+  amtEl.style.color = isInc ? 'var(--inc)' : 'var(--exp)';
+
+  let rows = '';
+  rows += `<div class="detail-row"><div class="detail-row-icon">📅</div><div class="detail-row-label">日期</div><div class="detail-row-val">${r.date}</div></div>`;
+  if (r.phone) {
+    rows += `<div class="detail-row"><div class="detail-row-icon">📞</div><div class="detail-row-label">電話</div><div class="detail-row-val"><a href="tel:${r.phone}">${r.phone}</a></div></div>`;
+  }
+  if (r.note) {
+    const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(r.note)}`;
+    rows += `<div class="detail-row"><div class="detail-row-icon">📍</div><div class="detail-row-label">地址/備註</div><div class="detail-row-val"><a href="${mapUrl}" target="_blank">${r.note}</a></div></div>`;
+  }
+  if (!r.phone && !r.note) {
+    rows += `<div class="detail-row"><div class="detail-row-icon">📝</div><div class="detail-row-label">備註</div><div class="detail-row-val" style="color:var(--text2)">無</div></div>`;
+  }
+
+  document.getElementById('detail-rows').innerHTML = rows;
+  document.getElementById('detail-edit-btn').onclick = () => { closeDetail(); editRecord(id); };
+  document.getElementById('detail-del-btn').onclick = () => { closeDetail(); deleteRecord(id); };
+  document.getElementById('detail-overlay').classList.add('show');
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('show');
+}
+
+function closeDetailIfBg(e) {
+  if (e.target === document.getElementById('detail-overlay')) closeDetail();
+}
+
 function itemHTML(r,kw) {
   function hl(t) {
     if (!kw) return t;
@@ -624,42 +704,41 @@ function itemHTML(r,kw) {
   const sign=r.type==='income'?'+':'-';
   const phoneStr=r.phone?`<span style="color:var(--inc);margin-left:4px">📞 ${hl(r.phone)}</span>`:'';
   const noteStr = r.note ? ' · ' + hl(r.note) : '';
-  return `<div class="item">
-    <div class="item-icon ${r.type==='income'?'icon-i':'icon-e'}">${r.icon||'🔑'}</div>
-    <div class="item-info">
-      <div class="item-name">${hl(r.name)}</div>
-      <div class="item-meta">${r.date}${noteStr}${phoneStr}</div>
-    </div>
-    <div class="item-amt" style="color:${color}">${sign}${r.amount.toLocaleString()}</div>
-    <button class="del-btn" onclick="editRecord(${r.id})" style="font-size:17px">✏️</button>
-    <button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>
-  </div>`;
+  return `
+    <div class="item" onclick="openDetail(${r.id})">
+      <div class="item-icon ${r.type==='income'?'icon-i':'icon-e'}">${r.icon||'🔑'}</div>
+      <div class="item-info">
+        <div class="item-name">${hl(r.name)}</div>
+        <div class="item-meta">${r.date}${noteStr}${phoneStr}</div>
+      </div>
+      <div class="item-amt" style="color:${color}">${sign}${r.amount.toLocaleString()}</div>
+    </div>`;
 }
+
 function renderBreakdown(subset,label) {
   document.getElementById('stat-badge').textContent=label;
   const nameMap={};
-  subset.forEach(r=>{
-    if(!nameMap[r.name])nameMap[r.name]={income:0,expense:0,count:0};
-    nameMap[r.name][r.type]+=r.amount;
-    nameMap[r.name].count++;
-  });
+  subset.forEach(r=>{ if(!nameMap[r.name])nameMap[r.name]={income:0,expense:0}; nameMap[r.name][r.type]+=r.amount; });
   const cats=Object.entries(nameMap).sort((a,b)=>(b[1].income+b[1].expense)-(a[1].income+a[1].expense));
   const maxVal=Math.max(...cats.map(([,v])=>v.income+v.expense),1);
   const bdEl=document.getElementById('breakdown');
   if (!cats.length) { bdEl.innerHTML='<div class="empty">暫無資料</div>'; return; }
   bdEl.innerHTML=cats.map(([name,vals])=>{
-    const total=vals.income+vals.expense; const pct=Math.round(total/maxVal*100);
+    const total=vals.income+vals.expense;
+    const pct=Math.round(total/maxVal*100);
     const isInc=vals.income>=vals.expense;
     return `<div class="bd-row">
-      <div class="bd-label">${name}<br><span style="font-size:10px;color:var(--text2);font-weight:400">${vals.count}筆</span></div>
+      <div class="bd-label">${name}</div>
       <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${isInc?'#5DCAA5':'#F0997B'}"></div></div>
       <div class="bd-amt" style="color:${isInc?'var(--inc-fg)':'var(--exp-fg)'}">${isInc?'+':'-'}${fmt(total)}</div>
     </div>`;
   }).join('');
 }
+
 function renderHome() {
   const today=new Date().toISOString().split('T')[0];
-  const nowMonth=today.slice(0,7); const nowYear=today.slice(0,4);
+  const nowMonth=today.slice(0,7);
+  const nowYear=today.slice(0,4);
   document.getElementById('home-year-label').textContent=nowYear+' 年度概況';
   const yearly=records.filter(r=>r.date.slice(0,4)===nowYear);
   const yI=yearly.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
@@ -689,6 +768,7 @@ function renderHome() {
     <div class="metric"><div class="metric-label">日利潤</div><div class="metric-value ${dN>=0?'c-pp':'c-pn'}">${dN>=0?'+':'-'}${fmt(dN)}</div></div>`;
   renderHomeCal();
 }
+
 function switchQueryTab(tab) {
   queryTab=tab;
   ['month','day','kw'].forEach(t=>{
@@ -696,23 +776,15 @@ function switchQueryTab(tab) {
     document.getElementById('qpane-'+t).style.display=t===tab?'':'none';
   });
   document.getElementById('bd-card').style.display=tab==='kw'?'none':'';
-  if (tab!=='month') document.getElementById('query-month-metrics-wrap').style.display='none';
   renderQuery();
 }
+
 function renderQuery() {
   buildMonthOptions();
   if (queryTab==='month') {
     const month=document.getElementById('filter-month').value;
     const typeF=document.getElementById('filter-type').value;
     const monthly=records.filter(r=>r.date.slice(0,7)===month);
-    const mI=monthly.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-    const mE=monthly.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
-    const mN=mI-mE;
-    document.getElementById('query-month-metrics').innerHTML=`
-      <div class="metric"><div class="metric-label">月營收</div><div class="metric-value c-inc">+${fmt(mI)}</div></div>
-      <div class="metric"><div class="metric-label">月支出</div><div class="metric-value c-exp">-${fmt(mE)}</div></div>
-      <div class="metric"><div class="metric-label">月利潤</div><div class="metric-value ${mN>=0?'c-pp':'c-pn'}">${mN>=0?'+':'-'}${fmt(mN)}</div></div>`;
-    document.getElementById('query-month-metrics-wrap').style.display='';
     const filtered=monthly.filter(r=>typeF==='all'||r.type===typeF);
     const sorted=[...filtered].sort((a,b)=>b.date.localeCompare(a.date));
     document.getElementById('query-list').innerHTML=sorted.length?sorted.map(r=>itemHTML(r,'')).join(''):'<div class="empty">本月無記錄</div>';
@@ -743,6 +815,7 @@ function renderQuery() {
     renderSearch(document.getElementById('search-input').value.trim());
   }
 }
+
 function onSearchInput() {
   const kw=document.getElementById('search-input').value.trim();
   document.getElementById('search-clear').className='sc'+(kw?' show':'');
