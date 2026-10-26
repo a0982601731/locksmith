@@ -166,6 +166,24 @@ button { font-family:inherit; }
 .mt-m { color:var(--text); }
 .mt-none { grid-column:2 / 5; text-align:center; color:var(--text2); font-weight:400; }
 
+.mc { display:flex; gap:3px; height:120px; padding:4px 4px 0; }
+.mc-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; cursor:pointer; border-radius:6px; padding-bottom:2px; }
+.mc-col.sel { background:var(--inc-bg); }
+.mc-bars { display:flex; gap:1px; align-items:flex-end; height:100px; width:100%; justify-content:center; }
+.mc-bars i { display:block; width:42%; min-height:1px; border-radius:2px 2px 0 0; }
+.mc-bars .mi { background:var(--inc); } .mc-bars .me { background:var(--exp); }
+.mc-col span { font-size:10px; color:var(--text2); margin-top:3px; }
+.mc-legend { display:flex; justify-content:space-between; font-size:11px; color:var(--text2); padding:6px 6px 10px; }
+.pt-head,.pt-row { display:grid; gap:4px; padding:8px 6px; align-items:center; text-align:right; font-size:13px; }
+.pt-head { color:var(--text2); font-size:11px; border-bottom:0.5px solid var(--border); }
+.pt-head span:first-child,.pt-row .mt-m { text-align:left; }
+.pt-row { border-bottom:0.5px solid var(--border); cursor:pointer; }
+.pt-row.sel { background:var(--inc-bg); border-radius:8px; border-bottom-color:transparent; }
+.pt-row b { display:block; font-size:14px; }
+.pt-row small { display:block; color:var(--text2); font-size:11px; }
+.pt-zero { color:var(--text2); }
+.pt-total { font-weight:700; border-top:1.5px solid var(--border); cursor:default; }
+
 /* 備份 */
 .bk-stat { display:flex; justify-content:space-between; padding:10px 4px; border-bottom:0.5px solid var(--border); font-size:14px; }
 .bk-stat:last-of-type { border-bottom:none; }
@@ -203,8 +221,13 @@ button { font-family:inherit; }
   <div id="cal-detail"></div>
   <div class="card">
     <div class="section-title" id="mt-title"></div>
+    <div id="mt-chart"></div>
     <div id="mt-body"></div>
     <div class="bk-tip" style="margin-top:8px">點任一個月份，上面的月概況和月曆會跳到那個月</div>
+  </div>
+  <div class="card">
+    <div class="section-title" id="pt-title"></div>
+    <div id="pt-body"></div>
   </div>
 </div>
 
@@ -219,6 +242,9 @@ button { font-family:inherit; }
     </div>
     <div class="custom-field" id="custom-field">
       <div class="field"><label>自訂項目名稱</label><input type="text" id="inp-custom" placeholder="請輸入項目名稱" /></div>
+    </div>
+    <div class="custom-field" id="peer-field">
+      <div class="field"><label>是哪位同行（統計用）</label><select id="inp-peer" onchange="onPeerPick()"></select></div>
     </div>
     <div class="form-row">
       <div class="field"><label>金額 (NT$)</label><input type="number" id="inp-amount" placeholder="0" min="0" inputmode="numeric" /></div>
@@ -353,6 +379,30 @@ if (!memos || typeof memos !== 'object' || Array.isArray(memos)) memos = {};
 const saveRecords = () => store(KEY, records);
 const saveMemos = () => store(MKEY, memos);
 
+const PKEY = 'locksmith_peers_v1';
+let storedPeers = load(PKEY, []);
+if (!Array.isArray(storedPeers)) storedPeers = [];
+function allPeers() {
+  const s = new Set(storedPeers);
+  records.forEach(r => { if (r.peer) s.add(r.peer); });
+  return [...s];
+}
+function fillPeerSelect(sel) {
+  const list = allPeers();
+  if (sel && !list.includes(sel)) list.push(sel);
+  $('inp-peer').innerHTML = '<option value="">— 請選擇 —</option>' +
+    list.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('') + '<option value="__new">＋ 新增同行…</option>';
+  $('inp-peer').value = sel || '';
+}
+function onPeerPick() {
+  if ($('inp-peer').value !== '__new') return;
+  const n = (prompt('同行的名字（例如：阿明）') || '').trim();
+  if (n) {
+    if (!storedPeers.includes(n)) { storedPeers.push(n); store(PKEY, storedPeers); }
+    fillPeerSelect(n);
+  } else fillPeerSelect('');
+}
+
 let calYear, calMonth, selDay = null;
 let memoDate = '';
 let editingId = null;
@@ -396,21 +446,52 @@ function renderHome() {
   $('m-day').innerHTML   = metrics(records.filter(r => r.date === today),       '日營收', '日支出', '日利潤');
   renderNotice();
   renderMonthTable();
+  renderPeerTable();
   renderCal();
 }
 
 function renderMonthTable() {
   $('mt-title').textContent = `📊 ${calYear} 各月份收支`;
+  const data = [];
   let html = '<div class="mt-head"><span>月份</span><span>收入</span><span>支出</span><span>利潤</span></div>';
   for (let m = 1; m <= 12; m++) {
     const list = records.filter(r => r.date.startsWith(`${calYear}-${pad(m)}`));
     const i = sum(list, 'income'), e = sum(list, 'expense'), p = i - e;
+    data.push([i, e]);
     html += `<div class="mt-row${m - 1 === calMonth ? ' sel' : ''}" onclick="goMonth(${m - 1})"><span class="mt-m">${m} 月</span>` +
       (list.length
         ? `<span class="c-inc">+${fmt(i)}</span><span class="c-exp">-${fmt(e)}</span><span class="${p >= 0 ? 'c-pp' : 'c-pn'}">${p >= 0 ? '+' : '-'}${fmt(p)}</span>`
         : `<span class="mt-none">— 無記錄</span>`) + '</div>';
   }
+  const max = Math.max(...data.map(d => Math.max(d[0], d[1])), 1);
+  $('mt-chart').innerHTML = '<div class="mc">' + data.map(([i, e], k) =>
+    `<div class="mc-col${k === calMonth ? ' sel' : ''}" onclick="goMonth(${k})"><div class="mc-bars"><i class="mi" style="height:${i / max * 100}%"></i><i class="me" style="height:${e / max * 100}%"></i></div><span>${k + 1}</span></div>`).join('') +
+    `</div><div class="mc-legend"><span class="c-inc">■ 收入</span><span class="c-exp">■ 支出</span><span>最高 ${fmt(max)}</span></div>`;
   $('mt-body').innerHTML = html;
+}
+
+function renderPeerTable() {
+  $('pt-title').textContent = `🤝 ${calYear} 同行代工統計`;
+  const jobs = records.filter(r => r.type === 'income' && r.name === '幫同行代工' && r.date.startsWith(calYear + '-'));
+  if (!jobs.length) {
+    $('pt-body').innerHTML = '<div class="empty" style="padding:1.2rem 1rem">這一年還沒有「幫同行代工」的記錄<br>新增時選「幫同行代工」再選同行，這裡就會統計每月幾單</div>';
+    return;
+  }
+  const key = r => r.peer || '未指定';
+  const tot = {};
+  jobs.forEach(r => { tot[key(r)] = (tot[key(r)] || 0) + r.amount; });
+  const names = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
+  const cols = `grid-template-columns:48px repeat(${names.length},1fr)`;
+  const cell = list => list.length
+    ? `<span><b>${list.length} 單</b><small>${fmt(list.reduce((s, r) => s + r.amount, 0))}</small></span>`
+    : '<span class="pt-zero">—</span>';
+  let html = `<div class="pt-head" style="${cols}"><span>月份</span>${names.map(n => `<span>${esc(n)}</span>`).join('')}</div>`;
+  for (let m = 1; m <= 12; m++) {
+    const ml = jobs.filter(r => r.date.startsWith(`${calYear}-${pad(m)}`));
+    html += `<div class="pt-row${m - 1 === calMonth ? ' sel' : ''}" style="${cols}" onclick="goMonth(${m - 1})"><span class="mt-m">${m} 月</span>${names.map(n => cell(ml.filter(r => key(r) === n))).join('')}</div>`;
+  }
+  html += `<div class="pt-row pt-total" style="${cols}"><span class="mt-m">全年</span>${names.map(n => cell(jobs.filter(r => key(r) === n))).join('')}</div>`;
+  $('pt-body').innerHTML = html;
 }
 
 function renderNotice() {
@@ -540,12 +621,14 @@ function checkCustom() {
   const other = $('income-select').value === '其他' || $('expense-select').value === '其他';
   $('custom-field').classList.toggle('show', other);
   if (!other) $('inp-custom').value = '';
+  $('peer-field').classList.toggle('show', $('income-select').value === '幫同行代工');
 }
 
 function resetForm() {
   editingId = null;
   ['income-select','expense-select','inp-custom','inp-amount','inp-note','inp-phone'].forEach(id => $(id).value = '');
   $('inp-date').value = todayStr();
+  fillPeerSelect('');
   $('form-title').textContent = '新增記錄';
   $('btn-save').textContent = '＋ 新增';
   $('btn-cancel').style.display = 'none';
@@ -563,10 +646,12 @@ function saveRecord() {
   if (!name) return alert('請填寫自訂項目名稱');
   if (!amount || amount <= 0) return alert('請填寫正確金額');
   if (!date) return alert('請選擇日期');
+  const peer = iv === '幫同行代工' ? $('inp-peer').value : '';
+  if (iv === '幫同行代工' && (!peer || peer === '__new')) return alert('請選擇是哪位同行（統計要用）');
   const rec = {
     id: editingId || Date.now(), type: iv ? 'income' : 'expense', name,
     icon: ICONS[sel] || '•', amount, date,
-    note: $('inp-note').value.trim(), phone: $('inp-phone').value.trim()
+    note: $('inp-note').value.trim(), phone: $('inp-phone').value.trim(), peer
   };
   const wasEdit = !!editingId;
   if (wasEdit) records = records.map(r => r.id === editingId ? rec : r);
@@ -592,6 +677,7 @@ function startEdit(id) {
   $('inp-date').value = r.date;
   $('inp-note').value = r.note || '';
   $('inp-phone').value = r.phone || '';
+  fillPeerSelect(r.peer || '');
   $('form-title').textContent = '編輯記錄';
   $('btn-save').textContent = '儲存修改';
   $('btn-cancel').style.display = '';
@@ -620,7 +706,7 @@ function itemHTML(r, kw) {
     <div class="item-icon ${inc ? 'icon-i' : 'icon-e'}">${esc(r.icon || '🔑')}</div>
     <div class="item-info">
       <div class="item-name">${hl(r.name)}</div>
-      <div class="item-meta">${esc(r.date)}${r.note ? ' · ' + hl(r.note) : ''}${phone}</div>
+      <div class="item-meta">${esc(r.date)}${r.peer ? ' · 🤝' + hl(r.peer) : ''}${r.note ? ' · ' + hl(r.note) : ''}${phone}</div>
     </div>
     <div class="item-amt" style="color:${inc ? 'var(--inc)' : 'var(--exp)'}">${inc ? '+' : '-'}${r.amount.toLocaleString()}</div>
   </div>`;
@@ -639,6 +725,7 @@ function openDetail(id) {
   amt.style.background = inc ? 'var(--inc-bg)' : 'var(--exp-bg)';
   amt.style.color = inc ? 'var(--inc)' : 'var(--exp)';
   let rows = `<div class="d-row"><div class="ic">📅</div><div class="lb">日期</div><div class="vl">${esc(r.date)}</div></div>`;
+  if (r.peer) rows += `<div class="d-row"><div class="ic">🤝</div><div class="lb">同行</div><div class="vl">${esc(r.peer)}</div></div>`;
   if (r.phone) rows += `<div class="d-row"><div class="ic">📞</div><div class="lb">電話</div><div class="vl"><a href="tel:${esc(r.phone.replace(/[^\d+]/g, ''))}">${esc(r.phone)}</a></div></div>`;
   if (r.note) rows += `<div class="d-row"><div class="ic">📍</div><div class="lb">地址/備註</div><div class="vl"><a href="https://maps.google.com/?q=${encodeURIComponent(r.note)}" target="_blank" rel="noopener">${esc(r.note)}</a></div></div>`;
   if (!r.phone && !r.note) rows += `<div class="d-row"><div class="ic">📝</div><div class="lb">備註</div><div class="vl" style="color:var(--text2)">無</div></div>`;
@@ -724,7 +811,7 @@ function renderSearch(kw) {
   const hint = $('search-hint'), list = $('query-list');
   if (!kw) { hint.textContent = '輸入關鍵字搜尋所有記錄'; list.innerHTML = ''; return; }
   const k = kw.toLowerCase();
-  const rows = records.filter(r => r.name.toLowerCase().includes(k) || (r.note || '').toLowerCase().includes(k) || (r.phone || '').includes(kw) || r.date.includes(kw))
+  const rows = records.filter(r => r.name.toLowerCase().includes(k) || (r.peer || '').toLowerCase().includes(k) || (r.note || '').toLowerCase().includes(k) || (r.phone || '').includes(kw) || r.date.includes(kw))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   hint.textContent = `找到 ${rows.length} 筆記錄`;
   list.innerHTML = rows.length ? rows.map(r => itemHTML(r, kw)).join('') : '<div class="empty">找不到相關記錄</div>';
