@@ -172,6 +172,10 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
 <body>
 <div class="header">
   <h1>🔑 鎖匠記帳</h1>
+  <div style="display:flex;gap:6px">
+    <button onclick="importData()" style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit">匯入</button>
+    <button onclick="exportData()" style="background:var(--inc);border:none;border-radius:8px;padding:6px 10px;font-size:12px;color:white;cursor:pointer;font-family:inherit">備份</button>
+  </div>
 </div>
 
 <!-- 總覽 -->
@@ -838,6 +842,43 @@ function renderSearch(kw) {
   ).sort((a,b)=>b.date.localeCompare(a.date));
   hint.textContent=`找到 ${results.length} 筆記錄`;
   document.getElementById('query-list').innerHTML=results.length?results.map(r=>itemHTML(r,kw)).join(''):'<div class="empty">找不到相關記錄</div>';
+}
+
+async function exportData() {
+  const data = { records, memos, exportedAt: new Date().toISOString() };
+  const json = JSON.stringify(data, null, 2);
+  const date = new Date().toISOString().slice(0,10);
+  const fileName = `鎖匠記帳備份_${date}.json`;
+  const blob = new Blob([json], { type: 'application/json' });
+  const file = new File([blob], fileName, { type: 'application/json' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: '鎖匠記帳備份' }); return; }
+    catch(e) { if (e.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.records) { records = data.records; save(); }
+        if (data.memos) { memos = data.memos; saveMemos(); }
+        buildMonthOptions(); renderHome();
+        alert('✅ 匯入成功！共 '+records.length+' 筆記錄');
+      } catch(e) { alert('❌ 檔案格式錯誤'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
