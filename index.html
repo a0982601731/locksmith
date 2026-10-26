@@ -2,24 +2,16 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<meta name="theme-color" content="#ffffff" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#1D9E75" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="鎖匠記帳" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" href="icon-192.png" />
 <title>鎖匠記帳</title>
-<script>
-const manifestData = {
-  name: "鎖匠記帳", short_name: "鎖匠記帳", description: "鎖匠外出工作記帳工具",
-  start_url: "./", display: "standalone", background_color: "#ffffff", theme_color: "#1D9E75",
-  icons: [{ src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%231D9E75'/%3E%3Ctext x='96' y='130' font-size='100' text-anchor='middle' fill='white'%3E%F0%9F%94%91%3C/text%3E%3C/svg%3E", sizes: "192x192", type: "image/svg+xml" }]
-};
-const blob = new Blob([JSON.stringify(manifestData)], {type:'application/json'});
-const manifestURL = URL.createObjectURL(blob);
-document.addEventListener('DOMContentLoaded', () => {
-  const link = document.createElement('link'); link.rel='manifest'; link.href=manifestURL; document.head.appendChild(link);
-});
-</script>
 <style>
 :root {
   --bg:#f5f5f7; --card:#ffffff; --border:#e5e5ea; --text:#1c1c1e; --text2:#8e8e93;
@@ -28,229 +20,202 @@ document.addEventListener('DOMContentLoaded', () => {
   --tab-active:#ffffff; --radius:12px; --radius-sm:8px;
 }
 @media (prefers-color-scheme:dark) {
-  :root { --bg:#1c1c1e; --card:#2c2c2e; --border:#3a3a3c; --text:#f2f2f7; --text2:#8e8e93; --tab-active:#3a3a3c; }
+  :root { --bg:#1c1c1e; --card:#2c2c2e; --border:#3a3a3c; --text:#f2f2f7; --text2:#8e8e93; --tab-active:#3a3a3c;
+          --inc-bg:#12372b; --inc-fg:#5DCAA5; --exp-bg:#3b2119; --exp-fg:#F0997B; --profit:#5A9FE0; }
 }
 * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-html,body { height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-.header { background:var(--card); border-bottom:0.5px solid var(--border); padding:14px 16px; position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
+html,body { min-height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif; }
+button { font-family:inherit; }
+.header { background:var(--card); border-bottom:0.5px solid var(--border); padding:calc(env(safe-area-inset-top) + 12px) 16px 12px; position:sticky; top:0; z-index:100; }
 .header h1 { font-size:19px; font-weight:700; }
-.content { padding:8px 8px 100px; max-width:480px; margin:0 auto; }
+.content { padding:10px 8px calc(90px + env(safe-area-inset-bottom)); max-width:480px; margin:0 auto; }
+.page { display:none; }
+.page.active { display:block; }
 .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:var(--card); border-top:0.5px solid var(--border); display:flex; z-index:100; padding-bottom:env(safe-area-inset-bottom); }
-.nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 4px 6px; background:none; border:none; cursor:pointer; color:var(--text2); font-size:10px; font-family:inherit; }
+.nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 4px 6px; background:none; border:none; cursor:pointer; color:var(--text2); font-size:11px; }
 .nav-btn .nav-icon { font-size:22px; }
-.nav-btn.active { color:var(--inc); }
+.nav-btn.active { color:var(--inc); font-weight:600; }
 .card { background:var(--card); border-radius:var(--radius); padding:12px 8px; margin-bottom:12px; border:0.5px solid var(--border); }
 .metrics3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.metric { background:var(--bg); border-radius:var(--radius-sm); padding:10px 8px; text-align:center; }
+.metric { background:var(--bg); border-radius:var(--radius-sm); padding:10px 6px; text-align:center; }
 .metric-label { font-size:11px; color:var(--text2); margin-bottom:4px; }
 .metric-value { font-size:16px; font-weight:600; }
 .c-inc{color:var(--inc);} .c-exp{color:var(--exp);} .c-pp{color:var(--profit);} .c-pn{color:var(--exp);}
 .divider { height:0.5px; background:var(--border); margin:12px 0; }
-.group-label { font-size:11px; color:var(--text2); letter-spacing:0.05em; margin-bottom:8px; text-transform:uppercase; }
-.entry-cols { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
-.field { margin-bottom:12px; }
+.group-label { font-size:11px; color:var(--text2); letter-spacing:0.05em; margin-bottom:8px; padding-left:2px; }
+.section-title { font-size:16px; font-weight:700; margin-bottom:12px; padding-left:4px; }
+.notice { background:#FFF3C4; color:#7A5200; border-radius:var(--radius); padding:10px 14px; margin-bottom:12px; font-size:13px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.notice button { background:#7A5200; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer; flex-shrink:0; }
+
+/* 表單 */
+.card.form { padding:14px 12px; }
+.entry-cols,.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
 .field label { display:block; font-size:13px; color:var(--text2); margin-bottom:5px; }
-.field input,.field select { width:100%; padding:10px 12px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font-size:15px; font-family:inherit; appearance:none; -webkit-appearance:none; }
-.field input:focus,.field select:focus { outline:2px solid var(--inc); outline-offset:-1px; }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.field input,.field select,.filter-row select,.filter-row input,.search-wrap input,.memo-input-row input {
+  width:100%; padding:10px 12px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font-size:16px; font-family:inherit; appearance:none; -webkit-appearance:none; min-height:44px; }
+.field input:focus,.field select:focus,.search-wrap input:focus { outline:2px solid var(--inc); outline-offset:-1px; }
 .custom-field { display:none; margin-bottom:12px; }
 .custom-field.show { display:block; }
-.custom-field label { display:block; font-size:13px; color:var(--text2); margin-bottom:5px; }
-.custom-field input { width:100%; padding:10px 12px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font-size:15px; font-family:inherit; }
-.add-btn { width:100%; padding:13px; background:var(--inc); border:none; border-radius:var(--radius-sm); font-size:16px; font-family:inherit; font-weight:600; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; }
-.add-btn:active { opacity:0.85; }
+.btn-main { width:100%; padding:13px; background:var(--inc); border:none; border-radius:var(--radius-sm); font-size:16px; font-weight:600; color:#fff; cursor:pointer; }
+.btn-main:active { opacity:0.85; }
+.btn-sub { width:100%; padding:12px; background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-sm); font-size:15px; color:var(--text2); cursor:pointer; margin-top:8px; }
+.edit-banner { display:none; background:var(--inc-bg); color:var(--inc-fg); border-radius:var(--radius-sm); padding:8px 12px; font-size:13px; margin-bottom:12px; }
+
+/* 查詢 */
 .view-tabs { display:flex; background:var(--bg); border-radius:var(--radius-sm); padding:3px; margin-bottom:14px; gap:2px; }
-.view-tab { flex:1; padding:7px 4px; border:none; border-radius:6px; background:none; color:var(--text2); font-size:13px; font-family:inherit; cursor:pointer; text-align:center; }
+.view-tab { flex:1; padding:8px 4px; border:none; border-radius:6px; background:none; color:var(--text2); font-size:14px; cursor:pointer; }
 .view-tab.active { background:var(--tab-active); color:var(--text); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.12); }
 .filter-row { display:flex; gap:8px; margin-bottom:12px; }
-.filter-row select,.filter-row input[type=date] { flex:1; padding:9px 10px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font-size:14px; font-family:inherit; appearance:none; -webkit-appearance:none; }
 .search-wrap { position:relative; margin-bottom:8px; }
-.search-wrap input { width:100%; padding:10px 36px 10px 38px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font-size:15px; font-family:inherit; }
-.search-wrap input:focus { outline:2px solid var(--inc); outline-offset:-1px; }
-.si { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:18px; pointer-events:none; }
-.sc { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:var(--text2); border:none; border-radius:50%; width:18px; height:18px; cursor:pointer; color:white; font-size:11px; display:none; align-items:center; justify-content:center; }
+.search-wrap input { padding-left:38px; padding-right:36px; }
+.si { position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:18px; pointer-events:none; }
+.sc { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:var(--text2); border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; color:#fff; font-size:11px; display:none; align-items:center; justify-content:center; }
 .sc.show { display:flex; }
-.search-hint { font-size:12px; color:var(--text2); margin-bottom:12px; min-height:18px; }
+.search-hint { font-size:12px; color:var(--text2); margin-bottom:12px; min-height:18px; padding-left:2px; }
 .highlight { background:#FFF3C4; border-radius:2px; padding:0 1px; color:#7A5200; }
 .day-chips { display:flex; gap:8px; margin-bottom:12px; }
 .day-chip { flex:1; background:var(--bg); border-radius:var(--radius-sm); padding:8px 6px; text-align:center; }
 .day-chip-label { font-size:10px; color:var(--text2); margin-bottom:3px; }
 .day-chip-val { font-size:14px; font-weight:600; }
+
+/* 記錄列表 */
 .record-list { display:flex; flex-direction:column; gap:8px; }
-.item { display:flex; align-items:center; gap:10px; padding:11px 14px; background:var(--card); border:0.5px solid var(--border); border-radius:var(--radius); }
+.item { display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--card); border:0.5px solid var(--border); border-radius:var(--radius); cursor:pointer; }
+.item:active { opacity:0.8; }
 .item-icon { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
 .icon-i{background:var(--inc-bg);} .icon-e{background:var(--exp-bg);}
 .item-info { flex:1; min-width:0; }
 .item-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .item-meta { font-size:12px; color:var(--text2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.item-meta a { color: #ffffff; }
 .item-amt { font-size:15px; font-weight:600; flex-shrink:0; }
-.del-btn { background:none; border:none; cursor:pointer; color:var(--text2); font-size:20px; padding:4px; flex-shrink:0; }
-.bd-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.bd-label { font-size:13px; color:var(--text2); width:80px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bd-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; padding:0 4px; }
+.bd-label { font-size:13px; color:var(--text2); width:84px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bar-bg { flex:1; height:10px; background:var(--bg); border-radius:5px; overflow:hidden; }
-.bar-fill { height:100%; border-radius:5px; transition:width 0.3s; }
+.bar-fill { height:100%; border-radius:5px; }
 .bd-amt { font-size:13px; font-weight:600; width:72px; text-align:right; flex-shrink:0; }
-.empty { text-align:center; color:var(--text2); font-size:14px; padding:2.5rem 1rem; }
-.section-title { font-size:16px; font-weight:700; margin-bottom:12px; }
-.page { display:none; }
-.page.active { display:block; }
+.empty { text-align:center; color:var(--text2); font-size:14px; padding:2rem 1rem; }
 
-/* 月曆樣式 */
-.cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+/* 月曆 */
+.cal-card { padding:12px 4px; }
+.cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .cal-title { font-size:17px; font-weight:700; }
-.cal-nav { background:none; border:none; font-size:22px; cursor:pointer; color:var(--inc); padding:4px 10px; }
-.cal-grid { display:flex; flex-direction:column; width:100%; }
-.cal-week { display:grid; grid-template-columns:repeat(7,1fr); gap:0; width:100%; }
-.cal-dow-row { display:grid; grid-template-columns:repeat(7,1fr); gap:0; width:100%; }
+.cal-nav { background:none; border:none; font-size:26px; cursor:pointer; color:var(--inc); padding:2px 14px; }
+.cal-dow-row,.cal-week { display:grid; grid-template-columns:repeat(7,1fr); width:100%; }
 .cal-dow { text-align:center; font-size:11px; color:var(--text2); padding:4px 0 6px; font-weight:500; }
-.cal-dow:first-child { color:#D85A30; }
-.cal-dow:last-child { color:#185FA5; }
-.cal-day { border-radius:4px; padding:1px 0; min-height:40px; cursor:pointer; position:relative; background:var(--bg); }
+.cal-dow.sun,.cal-num.sun { color:#D85A30; } .cal-dow.sat,.cal-num.sat { color:#185FA5; }
+.cal-day { border-radius:4px; padding:1px 0; min-height:44px; cursor:pointer; background:var(--bg); overflow:hidden; }
 .cal-day:active { opacity:0.7; }
 .cal-day.today { background:var(--inc-bg); }
-.cal-day.other-month { opacity:0.35; }
-.cal-day-num { font-size:10px; font-weight:500; text-align:center; margin-bottom:0; }
-.cal-day.today .cal-day-num { color:var(--inc); font-weight:700; }
-.cal-day-dot-wrap { display:flex; flex-direction:column; gap:0; padding:0; }
-.cal-tag { font-size:7px; border-radius:2px; padding:0 1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
+.cal-day.other { opacity:0.3; cursor:default; }
+.cal-day.sel { outline:2px solid var(--inc); outline-offset:-2px; }
+.cal-num { font-size:11px; font-weight:500; text-align:center; }
+.cal-day.today .cal-num { color:var(--inc); font-weight:700; }
+.cal-tag { font-size:8px; border-radius:2px; padding:0 1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
 .cal-tag.inc { background:var(--inc-bg); color:var(--inc-fg); }
 .cal-tag.exp { background:var(--exp-bg); color:var(--exp-fg); }
 .cal-tag.memo { background:#E8E0FF; color:#5B2D8E; }
-.cal-card { padding:12px 4px; }
-.cal-day.day-gold { background: #B8860B !important; }
-.cal-day.day-gold .cal-day-num { color: #fff !important; font-weight:700; }
-.cal-day.day-gold .cal-tag { background: rgba(255,255,255,0.25) !important; color:#fff !important; }
-.cal-day.day-green { background: #1D9E75 !important; }
-.cal-day.day-green .cal-day-num { color: #fff !important; font-weight:700; }
-.cal-day.day-green .cal-tag { background: rgba(255,255,255,0.25) !important; color:#fff !important; }
-.cal-week-row { display:flex; justify-content:space-between; align-items:center; padding:2px 8px 5px; background:var(--card); border-radius:0 0 4px 4px; margin-bottom:2px; }
-.cal-week-label { font-size:9px; color:var(--text2); }
-.cal-week-val { font-size:10px; font-weight:700; color:#185FA5; }
-.cal-day-detail { background:var(--card); border-radius:var(--radius); padding:12px 14px; margin-top:10px; border:0.5px solid var(--border); }
-.cal-day-detail-title { font-size:14px; font-weight:600; margin-bottom:10px; color:var(--text); }
+.cal-day.gold { background:#B8860B; } .cal-day.green { background:#1D9E75; }
+.cal-day.gold .cal-num,.cal-day.green .cal-num { color:#fff; font-weight:700; }
+.cal-day.gold .cal-tag,.cal-day.green .cal-tag { background:rgba(255,255,255,0.25); color:#fff; }
+.cal-week-row { display:flex; justify-content:space-between; padding:2px 8px 5px; margin-bottom:2px; }
+.cal-week-label { font-size:10px; color:var(--text2); }
+.cal-week-val { font-size:11px; font-weight:700; color:var(--profit); }
+.cal-legend { font-size:11px; color:var(--text2); text-align:center; margin-top:6px; }
+.cal-day-detail { background:var(--card); border-radius:var(--radius); padding:12px; border:0.5px solid var(--border); margin-bottom:12px; }
+.cal-hint { text-align:center; color:var(--text2); font-size:13px; padding:8px 0 16px; }
+.detail-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.detail-top-title { font-size:14px; font-weight:600; }
+.small-btn { background:var(--bg); border:0.5px solid var(--border); border-radius:8px; padding:6px 12px; font-size:13px; color:var(--text); cursor:pointer; }
+.memo-block { margin-bottom:10px; }
+.memo-block-title { font-size:12px; color:var(--text2); margin-bottom:6px; }
+.memo-block div.m { font-size:13px; background:var(--bg); padding:6px 10px; border-radius:6px; margin-bottom:4px; }
 
-/* 行事曆備忘彈窗 */
-.memo-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:flex-end; }
-.memo-overlay.show { display:flex; }
-.memo-sheet { background:var(--card); border-radius:16px 16px 0 0; padding:20px 16px; width:100%; padding-bottom:calc(env(safe-area-inset-bottom) + 20px); }
-.memo-sheet h3 { font-size:16px; font-weight:700; margin-bottom:12px; }
+/* 彈窗 */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:flex-end; }
+.overlay.show { display:flex; }
+.sheet { background:var(--card); border-radius:16px 16px 0 0; padding:20px 16px calc(env(safe-area-inset-bottom) + 20px); width:100%; max-height:85vh; overflow-y:auto; max-width:480px; margin:0 auto; }
+.sheet h3 { font-size:16px; font-weight:700; margin-bottom:12px; }
 .memo-list { margin-bottom:12px; display:flex; flex-direction:column; gap:6px; }
 .memo-item { display:flex; align-items:center; gap:8px; background:var(--bg); border-radius:8px; padding:8px 10px; }
-.memo-item-text { flex:1; font-size:14px; }
-.memo-del { background:none; border:none; cursor:pointer; font-size:16px; color:var(--text2); }
+.memo-item span { flex:1; font-size:14px; word-break:break-all; }
+.memo-item button { background:none; border:none; cursor:pointer; font-size:18px; padding:4px; }
 .memo-input-row { display:flex; gap:8px; }
-.memo-input-row input { flex:1; padding:10px 12px; border:0.5px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); color:var(--text); font-size:15px; font-family:inherit; }
-.memo-input-row button { padding:10px 16px; background:var(--inc); border:none; border-radius:var(--radius-sm); color:white; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
-.memo-close { width:100%; padding:12px; background:var(--bg); border:none; border-radius:var(--radius-sm); color:var(--text2); font-size:15px; font-family:inherit; cursor:pointer; margin-top:8px; }
+.memo-input-row button { padding:10px 16px; background:var(--inc); border:none; border-radius:var(--radius-sm); color:#fff; font-size:15px; font-weight:600; cursor:pointer; flex-shrink:0; }
+.d-head { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.d-icon { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.d-name { font-size:18px; font-weight:700; }
+.d-type { font-size:12px; color:var(--text2); margin-top:2px; }
+.d-amt { font-size:26px; font-weight:700; text-align:center; padding:12px 0; border-radius:var(--radius-sm); margin-bottom:14px; }
+.d-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border); }
+.d-row:last-child { border-bottom:none; }
+.d-row .ic { width:22px; text-align:center; flex-shrink:0; }
+.d-row .lb { font-size:12px; color:var(--text2); min-width:64px; flex-shrink:0; margin-top:2px; }
+.d-row .vl { font-size:15px; flex:1; word-break:break-all; }
+.d-row .vl a { color:var(--inc); text-decoration:none; }
+.d-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.d-actions button { padding:12px; border:none; border-radius:var(--radius-sm); font-size:15px; font-weight:600; cursor:pointer; }
+.d-edit { background:var(--bg); color:var(--text); border:0.5px solid var(--border) !important; }
+.d-del { background:var(--exp-bg); color:var(--exp); }
 
-/* 記錄詳細彈窗 */
-.detail-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:flex-end; }
-.detail-overlay.show { display:flex; }
-.detail-sheet { background:var(--card); border-radius:16px 16px 0 0; padding:20px 16px; width:100%; padding-bottom:calc(env(safe-area-inset-bottom) + 20px); max-height:80vh; overflow-y:auto; }
-.detail-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-.detail-icon { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
-.detail-title-block { flex:1; }
-.detail-name { font-size:18px; font-weight:700; }
-.detail-type { font-size:12px; color:var(--text2); margin-top:2px; }
-.detail-amt-big { font-size:26px; font-weight:700; text-align:center; padding:12px 0; border-radius:var(--radius-sm); margin-bottom:14px; }
-.detail-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border); }
-.detail-row:last-of-type { border-bottom:none; }
-.detail-row-icon { font-size:16px; width:22px; flex-shrink:0; text-align:center; margin-top:1px; }
-.detail-row-label { font-size:12px; color:var(--text2); min-width:50px; flex-shrink:0; margin-top:1px; }
-.detail-row-val { font-size:15px; flex:1; word-break:break-all; }
-.detail-row-val a { color:var(--inc); text-decoration:none; }
-.detail-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
-.detail-act-btn { padding:12px; border:none; border-radius:var(--radius-sm); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; }
-.detail-edit { background:var(--bg); color:var(--text); border:0.5px solid var(--border); }
-.detail-del { background:#FAECE7; color:var(--exp); }
-.detail-close { width:100%; padding:12px; background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-sm); color:var(--text2); font-size:15px; font-family:inherit; cursor:pointer; margin-top:8px; }
-.item { cursor:pointer; }
-.item:active { opacity:0.8; }
+/* 備份 */
+.bk-stat { display:flex; justify-content:space-between; padding:10px 4px; border-bottom:0.5px solid var(--border); font-size:14px; }
+.bk-stat:last-of-type { border-bottom:none; }
+.bk-stat span:first-child { color:var(--text2); }
+.bk-tip { font-size:12px; color:var(--text2); line-height:1.6; margin:12px 4px 0; }
+.toast { position:fixed; left:50%; bottom:calc(80px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:rgba(0,0,0,0.82); color:#fff; padding:10px 18px; border-radius:20px; font-size:14px; z-index:500; opacity:0; pointer-events:none; transition:opacity .2s; }
+.toast.show { opacity:1; }
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>🔑 鎖匠記帳</h1>
-  <div style="display:flex;gap:6px">
-    <button onclick="importData()" style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit">匯入</button>
-    <button onclick="exportData()" style="background:var(--inc);border:none;border-radius:8px;padding:6px 10px;font-size:12px;color:white;cursor:pointer;font-family:inherit">備份</button>
-  </div>
-</div>
+<div class="header"><h1>🔑 鎖匠記帳</h1></div>
 
 <!-- 總覽 -->
 <div class="content page active" id="page-home">
   <div class="card">
-    <div class="group-label" id="home-year-label">年度概況</div>
-    <div class="metrics3" id="year-metrics"></div>
+    <div class="group-label" id="lbl-year"></div>
+    <div class="metrics3" id="m-year"></div>
     <div class="divider"></div>
-    <div class="group-label" id="home-month-label">本月概況</div>
-    <div class="metrics3" id="month-metrics"></div>
+    <div class="group-label" id="lbl-month"></div>
+    <div class="metrics3" id="m-month"></div>
     <div class="divider"></div>
-    <div class="group-label" id="home-day-label">今日概況</div>
-    <div class="metrics3" id="day-metrics"></div>
+    <div class="group-label" id="lbl-day"></div>
+    <div class="metrics3" id="m-day"></div>
   </div>
-  <!-- 月曆直接嵌入總覽 -->
+  <div id="backup-notice"></div>
   <div class="card cal-card">
     <div class="cal-header">
-      <button class="cal-nav" onclick="homeCalPrev()">‹</button>
-      <div class="cal-title" id="home-cal-title"></div>
-      <button class="cal-nav" onclick="homeCalNext()">›</button>
-    </div>
-    <div class="cal-grid" id="home-cal-grid"></div>
-  </div>
-  <div id="home-cal-detail"></div>
-</div>
-
-<!-- 月曆頁（保留） -->
-<div class="content page" id="page-cal">
-  <div class="card cal-card">
-    <div class="cal-header">
-      <button class="cal-nav" onclick="calPrev()">‹</button>
+      <button class="cal-nav" onclick="calMove(-1)">‹</button>
       <div class="cal-title" id="cal-title"></div>
-      <button class="cal-nav" onclick="calNext()">›</button>
+      <button class="cal-nav" onclick="calMove(1)">›</button>
     </div>
-    <div class="cal-grid" id="cal-grid"></div>
+    <div id="cal-grid"></div>
+    <div class="cal-legend">日收入 ≥ 5,000 綠底　≥ 10,000 金底</div>
   </div>
   <div id="cal-detail"></div>
 </div>
 
-<!-- 新增 -->
+<!-- 新增 / 編輯 -->
 <div class="content page" id="page-add">
-  <div class="card">
-    <div class="section-title">新增記錄</div>
+  <div class="card form">
+    <div class="section-title" id="form-title" style="padding-left:0">新增記錄</div>
+    <div class="edit-banner" id="edit-banner">正在編輯舊記錄，按「儲存修改」才會生效</div>
     <div class="entry-cols">
-      <div class="field">
-        <label>收入項目</label>
-        <select id="income-select" onchange="onIncomeChange()">
-          <option value="">— 請選擇 —</option>
-          <option>汽車開鎖</option><option>機車開鎖</option><option>機車無鑰配鎖</option><option>門鎖開鎖</option>
-          <option>門鎖安裝</option><option>電子鎖安裝</option><option>電子鎖開鎖</option><option>幫同行代工</option>
-          <option value="其他">其他</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>支出項目</label>
-        <select id="expense-select" onchange="onExpenseChange()">
-          <option value="">— 請選擇 —</option>
-          <option>工具購買</option><option>鎖的成本</option><option>額外支出</option><option>委託同行代工</option>
-          <option value="其他">其他</option>
-        </select>
-      </div>
+      <div class="field"><label>收入項目</label><select id="income-select" onchange="onPick('income')"></select></div>
+      <div class="field"><label>支出項目</label><select id="expense-select" onchange="onPick('expense')"></select></div>
     </div>
     <div class="custom-field" id="custom-field">
-      <label>自訂項目名稱</label>
-      <input type="text" id="inp-custom" placeholder="請輸入項目名稱" />
+      <div class="field"><label>自訂項目名稱</label><input type="text" id="inp-custom" placeholder="請輸入項目名稱" /></div>
     </div>
-    <div class="form-row" style="margin-bottom:12px">
-      <div class="field" style="margin:0"><label>金額 (NT$)</label><input type="number" id="inp-amount" placeholder="0" min="0" inputmode="numeric" /></div>
-      <div class="field" style="margin:0"><label>日期</label><input type="date" id="inp-date" /></div>
+    <div class="form-row">
+      <div class="field"><label>金額 (NT$)</label><input type="number" id="inp-amount" placeholder="0" min="0" inputmode="numeric" /></div>
+      <div class="field"><label>日期</label><input type="date" id="inp-date" /></div>
     </div>
-    <div class="form-row" style="margin-bottom:12px">
-      <div class="field" style="margin:0"><label>客戶電話</label><input type="tel" id="inp-phone" placeholder="09xx-xxx-xxx" inputmode="tel" /></div>
-      <div class="field" style="margin:0"><label>備註（地址等）</label><input type="text" id="inp-note" placeholder="例：民權路100號" /></div>
+    <div class="form-row">
+      <div class="field"><label>客戶電話</label><input type="tel" id="inp-phone" placeholder="09xx-xxx-xxx" inputmode="tel" /></div>
+      <div class="field"><label>備註（地址等）</label><input type="text" id="inp-note" placeholder="例：民權路100號" /></div>
     </div>
-    <button class="add-btn" onclick="addRecord()">＋ 新增</button>
+    <button class="btn-main" id="btn-save" onclick="saveRecord()">＋ 新增</button>
+    <button class="btn-sub" id="btn-cancel" style="display:none" onclick="cancelEdit()">取消編輯</button>
   </div>
 </div>
 
@@ -265,17 +230,13 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
     <div id="qpane-month">
       <div class="filter-row">
         <select id="filter-month" onchange="renderQuery()"></select>
-        <select id="filter-type" onchange="renderQuery()">
-          <option value="all">全部</option><option value="income">僅收入</option><option value="expense">僅支出</option>
-        </select>
+        <select id="filter-type" onchange="renderQuery()"><option value="all">全部</option><option value="income">僅收入</option><option value="expense">僅支出</option></select>
       </div>
     </div>
     <div id="qpane-day" style="display:none">
       <div class="filter-row">
         <input type="date" id="filter-day" onchange="renderQuery()" />
-        <select id="filter-type-day" onchange="renderQuery()">
-          <option value="all">全部</option><option value="income">僅收入</option><option value="expense">僅支出</option>
-        </select>
+        <select id="filter-type-day" onchange="renderQuery()"><option value="all">全部</option><option value="income">僅收入</option><option value="expense">僅支出</option></select>
       </div>
       <div class="day-chips" id="day-chips" style="display:none"></div>
     </div>
@@ -285,7 +246,7 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
         <input type="text" id="search-input" placeholder="輸入地址、電話、項目名稱..." oninput="onSearchInput()" />
         <button class="sc" id="search-clear" onclick="clearSearch()">✕</button>
       </div>
-      <div class="search-hint" id="search-hint">輸入關鍵字搜尋所有記錄</div>
+      <div class="search-hint" id="search-hint"></div>
     </div>
     <div class="record-list" id="query-list"></div>
   </div>
@@ -295,597 +256,519 @@ html,body { height:100%; background:var(--bg); color:var(--text); font-family:-a
   </div>
 </div>
 
-<!-- 記錄詳細彈窗 -->
-<div class="detail-overlay" id="detail-overlay" onclick="closeDetailIfBg(event)">
-  <div class="detail-sheet">
-    <div class="detail-header">
-      <div class="detail-icon" id="detail-icon"></div>
-      <div class="detail-title-block">
-        <div class="detail-name" id="detail-name"></div>
-        <div class="detail-type" id="detail-type"></div>
-      </div>
-    </div>
-    <div class="detail-amt-big" id="detail-amt"></div>
-    <div id="detail-rows"></div>
-    <div class="detail-actions">
-      <button class="detail-act-btn detail-edit" id="detail-edit-btn">✏️ 編輯</button>
-      <button class="detail-act-btn detail-del" id="detail-del-btn">🗑 刪除</button>
-    </div>
-    <button class="detail-close" onclick="closeDetail()">關閉</button>
+<!-- 備份 -->
+<div class="content page" id="page-backup">
+  <div class="card form">
+    <div class="section-title" style="padding-left:0">備份與還原</div>
+    <div id="bk-stats"></div>
+    <div style="height:12px"></div>
+    <button class="btn-main" onclick="exportBackup()">⬇️ 匯出備份檔</button>
+    <button class="btn-sub" onclick="document.getElementById('import-file').click()">⬆️ 匯入備份檔</button>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importBackup(this)" />
+    <div class="bk-tip">資料只存在這支手機的瀏覽器裡。清除瀏覽器資料、換手機或刪除 App 都會消失，建議每週匯出一次，存到 LINE 或雲端。匯入時只會補上缺少的記錄，不會覆蓋現有資料。</div>
   </div>
 </div>
 
-<!-- 行事曆備忘彈窗 -->
-<div class="memo-overlay" id="memo-overlay" onclick="closeMemoIfBg(event)">
-  <div class="memo-sheet">
-    <h3 id="memo-sheet-title">📅 備忘</h3>
+<!-- 記錄詳細 -->
+<div class="overlay" id="detail-overlay" onclick="if(event.target===this)closeDetail()">
+  <div class="sheet">
+    <div class="d-head">
+      <div class="d-icon" id="d-icon"></div>
+      <div><div class="d-name" id="d-name"></div><div class="d-type" id="d-type"></div></div>
+    </div>
+    <div class="d-amt" id="d-amt"></div>
+    <div id="d-rows"></div>
+    <div class="d-actions">
+      <button class="d-edit" id="d-edit">✏️ 編輯</button>
+      <button class="d-del" id="d-del">🗑 刪除</button>
+    </div>
+    <button class="btn-sub" onclick="closeDetail()">關閉</button>
+  </div>
+</div>
+
+<!-- 備忘 -->
+<div class="overlay" id="memo-overlay" onclick="if(event.target===this)closeMemo()">
+  <div class="sheet">
+    <h3 id="memo-title">備忘</h3>
     <div class="memo-list" id="memo-list"></div>
     <div class="memo-input-row">
       <input type="text" id="memo-input" placeholder="新增備忘事項..." />
       <button onclick="addMemo()">新增</button>
     </div>
-    <button class="memo-close" onclick="closeMemo()">關閉</button>
+    <button class="btn-sub" onclick="closeMemo()">關閉</button>
   </div>
 </div>
 
 <nav class="bottom-nav">
   <button class="nav-btn active" id="nav-home" onclick="switchPage('home')"><span class="nav-icon">🏠</span>總覽</button>
-  <button class="nav-btn" id="nav-cal" onclick="switchPage('cal')"><span class="nav-icon">📅</span>月曆</button>
   <button class="nav-btn" id="nav-add" onclick="switchPage('add')"><span class="nav-icon">＋</span>新增</button>
   <button class="nav-btn" id="nav-search" onclick="switchPage('search')"><span class="nav-icon">🔍</span>查詢</button>
+  <button class="nav-btn" id="nav-backup" onclick="switchPage('backup')"><span class="nav-icon">💾</span>備份</button>
 </nav>
+<div class="toast" id="toast"></div>
 
 <script>
+/* ========== 基本設定（資料格式與舊版相同，舊資料可直接沿用） ========== */
+const KEY = 'locksmith_pwa_v1', MKEY = 'locksmith_memos_v1', BKEY = 'locksmith_last_backup';
+const INCOME  = ['汽車開鎖','機車開鎖','機車無鑰配鎖','門鎖開鎖','門鎖安裝','電子鎖安裝','電子鎖開鎖','幫同行代工'];
+const EXPENSE = ['工具購買','鎖的成本','額外支出','委託同行代工'];
 const ICONS = {
   '汽車開鎖':'🚗','機車開鎖':'🛵','機車無鑰配鎖':'🔑','門鎖開鎖':'🚪','門鎖安裝':'🔧','電子鎖安裝':'💻','電子鎖開鎖':'🔓','幫同行代工':'🤝',
-  '工具購買':'🔧','鎖的成本':'🔒','額外支出':'💵','委託同行代工':'💸','其他':'•'
+  '工具購買':'🔧','鎖的成本':'🔒','額外支出':'💵','委託同行代工':'💸'
 };
+const GREEN_AT = 5000, GOLD_AT = 10000;
 
-let records = [];
-let memos = {};
-let queryTab = 'month';
-let calYear, calMonth;
-let homeCalYear, homeCalMonth;
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr = () => ymd(new Date());          // 用本地時間，台灣凌晨不會變成前一天
+const fmt = n => Math.abs(Math.round(n)).toLocaleString();
+const sum = (arr, type) => arr.filter(r => r.type === type).reduce((s, r) => s + r.amount, 0);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function load(k, def) { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : def; } catch (e) { return def; } }
+function store(k, v) { try { localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); return true; } catch (e) { alert('儲存失敗，手機儲存空間可能已滿'); return false; } }
+
+let records = load(KEY, []);
+let memos = load(MKEY, {});
+if (!Array.isArray(records)) records = [];
+if (!memos || typeof memos !== 'object' || Array.isArray(memos)) memos = {};
+
+const saveRecords = () => store(KEY, records);
+const saveMemos = () => store(MKEY, memos);
+
+let calYear, calMonth, selDay = null;
 let memoDate = '';
-let memoContext = 'home'; // 'home' or 'cal'
+let editingId = null;
+let queryTab = 'month';
+{ const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); }
 
-try { const s = localStorage.getItem('locksmith_pwa_v1'); if(s) records = JSON.parse(s); } catch(e) {}
-try { const s = localStorage.getItem('locksmith_memos_v1'); if(s) memos = JSON.parse(s); } catch(e) {}
-function save() { try { localStorage.setItem('locksmith_pwa_v1', JSON.stringify(records)); } catch(e) {} }
-function saveMemos() { try { localStorage.setItem('locksmith_memos_v1', JSON.stringify(memos)); } catch(e) {} }
+let toastTimer;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
 
-const now = new Date();
-calYear = now.getFullYear();
-calMonth = now.getMonth();
-homeCalYear = now.getFullYear();
-homeCalMonth = now.getMonth();
-
-function switchPage(p) {
-  ['home','cal','add','search'].forEach(n => {
-    document.getElementById('page-'+n).classList.toggle('active', n===p);
-    document.getElementById('nav-'+n).classList.toggle('active', n===p);
+/* ========== 頁面切換 ========== */
+function switchPage(p, keepEdit) {
+  if (p !== 'add' && editingId && !keepEdit) resetForm();
+  ['home','add','search','backup'].forEach(n => {
+    $('page-' + n).classList.toggle('active', n === p);
+    $('nav-' + n).classList.toggle('active', n === p);
   });
-  if (p==='home') renderHome();
-  if (p==='cal')  renderCal();
-  if (p==='search') renderQuery();
+  if (p === 'home') renderHome();
+  if (p === 'search') renderQuery();
+  if (p === 'backup') renderBackup();
+  window.scrollTo(0, 0);
 }
 
-// ===== 總覽月曆 =====
-function homeCalPrev() { homeCalMonth--; if(homeCalMonth<0){homeCalMonth=11;homeCalYear--;} renderHomeCal(); }
-function homeCalNext() { homeCalMonth++; if(homeCalMonth>11){homeCalMonth=0;homeCalYear++;} renderHomeCal(); }
-
-function renderHomeCal(selectedDay) {
-  _renderCalCore(homeCalYear, homeCalMonth, selectedDay, 'home-cal-title', 'home-cal-grid', 'home-cal-detail', 'home');
-}
-
-// ===== 月曆頁 =====
-function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
-function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
-
-function renderCal(selectedDay) {
-  _renderCalCore(calYear, calMonth, selectedDay, 'cal-title', 'cal-grid', 'cal-detail', 'cal');
-}
-
-function selectCalDay(dateStr, ctx) {
-  if (ctx === 'home') renderHomeCal(dateStr);
-  else renderCal(dateStr);
-}
-
-function _renderCalCore(year, month, selectedDay, titleId, gridId, detailId, ctx) {
-  const DOWS = ['日','一','二','三','四','五','六'];
-  const monthStr = `${year}-${String(month+1).padStart(2,'0')}`;
-  document.getElementById(titleId).textContent = `${year} 年 ${month+1} 月`;
-
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const daysInPrev  = new Date(year, month, 0).getDate();
-  const today = new Date().toISOString().split('T')[0];
-
-  const dayMap = {};
-  records.filter(r=>r.date.slice(0,7)===monthStr).forEach(r=>{
-    const d = r.date.split('-')[2];
-    if (!dayMap[d]) dayMap[d] = [];
-    dayMap[d].push(r);
-  });
-
-  const cells = [];
-  const dowHtml = DOWS.map((d,i)=>`<div class="cal-dow" style="${i===0?'color:#D85A30':i===6?'color:#185FA5':''}">${d}</div>`).join('');
-
-  for (let i=0; i<firstDay; i++) {
-    const d = daysInPrev - firstDay + i + 1;
-    cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
-  }
-
-  for (let d=1; d<=daysInMonth; d++) {
-    const ds = String(d).padStart(2,'0');
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${ds}`;
-    const recs = dayMap[ds] || [];
-    const isToday = dateStr === today;
-    const isSel   = dateStr === selectedDay;
-    const dow = (firstDay + d - 1) % 7;
-    const numColor = dow===0 ? 'color:#D85A30' : dow===6 ? 'color:#185FA5' : '';
-
-    let tagsHtml = '';
-    recs.slice(0,2).forEach(r => {
-      const short = r.name.length>4 ? r.name.slice(0,4)+'…' : r.name;
-      tagsHtml += `<div class="cal-tag ${r.type==='income'?'inc':'exp'}">${r.icon||''} ${short}</div>`;
-    });
-    if (recs.length > 2) tagsHtml += `<div class="cal-tag inc">+${recs.length-2}筆</div>`;
-
-    const dayMemos = memos[dateStr] || [];
-    if (dayMemos.length > 0) {
-      const memoShort = dayMemos[0].length>4 ? dayMemos[0].slice(0,4)+'…' : dayMemos[0];
-      tagsHtml += `<div class="cal-tag memo">📌${memoShort}</div>`;
-    }
-
-    const dayIncome = recs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-    const dayClass = dayIncome>=10000 ? ' day-gold' : dayIncome>=5000 ? ' day-green' : '';
-    const selStyle = isSel ? 'outline:2px solid var(--inc);outline-offset:-2px;' : '';
-    cells.push(`<div class="cal-day${isToday?' today':''}${recs.length||dayMemos.length?' has-record':''}${dayClass}" style="${selStyle}" onclick="selectCalDay('${dateStr}','${ctx}')"><div class="cal-day-num" style="${numColor}">${d}</div><div class="cal-day-dot-wrap">${tagsHtml}</div></div>`);
-  }
-
-  const total = firstDay + daysInMonth;
-  const remain = total % 7 === 0 ? 0 : 7 - (total % 7);
-  for (let d=1; d<=remain; d++) {
-    cells.push(`<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`);
-  }
-
-  let html = `<div class="cal-dow-row">${dowHtml}</div>`;
-  for (let w=0; w < cells.length/7; w++) {
-    const weekCells = cells.slice(w*7, w*7+7);
-    let wInc = 0;
-    weekCells.forEach(cell => {
-      const m = cell.match(/selectCalDay\('(\d{4}-\d{2}-\d{2})'/);
-      if (m) {
-        const dayRecs = records.filter(r=>r.date===m[1]&&r.type==='income');
-        wInc += dayRecs.reduce((s,r)=>s+r.amount,0);
-      }
-    });
-    const wStr = wInc >= 10000 ? (wInc/10000).toFixed(1)+'萬' : wInc.toLocaleString();
-    html += `<div class="cal-week">${weekCells.join('')}</div>`;
-    html += `<div class="cal-week-row"><span class="cal-week-label">本週收入</span><span class="cal-week-val">${wInc>0?'+'+wStr:'—'}</span></div>`;
-  }
-
-  document.getElementById(gridId).innerHTML = html;
-
-  if (selectedDay) {
-    const dayRecs = records.filter(r=>r.date===selectedDay).sort((a,b)=>a.id-b.id);
-    const dayMemoList = memos[selectedDay] || [];
-    const dI = dayRecs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-    const dE = dayRecs.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
-    const dN = dI-dE;
-
-    const memoSection = dayMemoList.length ? `
-      <div style="margin-bottom:10px">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">📌 備忘事項</div>
-        ${dayMemoList.map(m=>`<div style="font-size:13px;background:var(--bg);padding:6px 10px;border-radius:6px;margin-bottom:4px">${m}</div>`).join('')}
-      </div>` : '';
-
-    let detailHtml = `<div class="cal-day-detail">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="cal-day-detail-title" style="margin:0">📋 ${selectedDay} 明細</div>
-        <button onclick="openMemo('${selectedDay}','${ctx}')" style="background:var(--bg);border:0.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit">📌 備忘</button>
-      </div>
-      ${memoSection}
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <div class="day-chip" style="flex:1"><div class="day-chip-label">收入</div><div class="day-chip-val c-inc">+${fmt(dI)}</div></div>
-        <div class="day-chip" style="flex:1"><div class="day-chip-label">支出</div><div class="day-chip-val c-exp">-${fmt(dE)}</div></div>
-        <div class="day-chip" style="flex:1"><div class="day-chip-label">結餘</div><div class="day-chip-val ${dN>=0?'c-pp':'c-pn'}">${dN>=0?'+':'-'}${fmt(dN)}</div></div>
-      </div>
-      <div class="record-list">`;
-    if (dayRecs.length) {
-      detailHtml += dayRecs.map(r=>itemHTML(r,'')).join('');
-    } else {
-      detailHtml += `<div class="empty" style="padding:1rem">當日無記錄</div>`;
-    }
-    detailHtml += `</div></div>`;
-    document.getElementById(detailId).innerHTML = detailHtml;
-  } else {
-    document.getElementById(detailId).innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:12px">點任一天查看明細</div>';
-  }
-}
-
-// ===== 備忘功能 =====
-function openMemo(dateStr, ctx) {
-  memoDate = dateStr;
-  memoContext = ctx || 'home';
-  document.getElementById('memo-sheet-title').textContent = `📅 ${dateStr} 備忘`;
-  renderMemoList();
-  document.getElementById('memo-overlay').classList.add('show');
-  document.getElementById('memo-input').focus();
-}
-
-function closeMemo() {
-  document.getElementById('memo-overlay').classList.remove('show');
-  document.getElementById('memo-input').value = '';
-}
-
-function closeMemoIfBg(e) {
-  if (e.target === document.getElementById('memo-overlay')) closeMemo();
-}
-
-function renderMemoList() {
-  const list = memos[memoDate] || [];
-  const el = document.getElementById('memo-list');
-  if (!list.length) { el.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:4px 0">暫無備忘</div>'; return; }
-  el.innerHTML = list.map((m,i) => `
-    <div class="memo-item">
-      <span class="memo-item-text">${m}</span>
-      <button class="memo-del" onclick="deleteMemo(${i})">🗑</button>
-    </div>`).join('');
-}
-
-function addMemo() {
-  const val = document.getElementById('memo-input').value.trim();
-  if (!val) return;
-  if (!memos[memoDate]) memos[memoDate] = [];
-  memos[memoDate].push(val);
-  saveMemos();
-  document.getElementById('memo-input').value = '';
-  renderMemoList();
-  if (memoContext === 'home') renderHomeCal(memoDate);
-  else renderCal(memoDate);
-}
-
-function deleteMemo(idx) {
-  memos[memoDate].splice(idx, 1);
-  if (!memos[memoDate].length) delete memos[memoDate];
-  saveMemos();
-  renderMemoList();
-  if (memoContext === 'home') renderHomeCal(memoDate);
-  else renderCal(memoDate);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('memo-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addMemo();
-  });
-});
-
-// ===== 表單 =====
-function onIncomeChange() {
-  if (document.getElementById('income-select').value) document.getElementById('expense-select').value='';
-  checkCustom();
-}
-function onExpenseChange() {
-  if (document.getElementById('expense-select').value) document.getElementById('income-select').value='';
-  checkCustom();
-}
-function checkCustom() {
-  const iv = document.getElementById('income-select').value;
-  const ev = document.getElementById('expense-select').value;
-  const isOther = iv==='其他'||ev==='其他';
-  document.getElementById('custom-field').className='custom-field'+(isOther?' show':'');
-  if (!isOther) document.getElementById('inp-custom').value='';
-}
-function getEntry() {
-  const iv = document.getElementById('income-select').value;
-  const ev = document.getElementById('expense-select').value;
-  if (!iv&&!ev) return null;
-  const type = iv?'income':'expense';
-  const sel  = iv||ev;
-  const name = sel==='其他'?document.getElementById('inp-custom').value.trim():sel;
-  return { type, name, icon:ICONS[sel]||'•' };
-}
-
-function addRecord() {
-  const entry  = getEntry();
-  const amount = parseFloat(document.getElementById('inp-amount').value);
-  const date   = document.getElementById('inp-date').value;
-  const note   = document.getElementById('inp-note').value.trim();
-  const phone  = document.getElementById('inp-phone').value.trim();
-  if (!entry)               { alert('請選擇收入或支出項目'); return; }
-  if (!entry.name)          { alert('請填寫自訂項目名稱'); return; }
-  if (!amount||amount<=0)   { alert('請填寫正確金額'); return; }
-  if (!date)                { alert('請選擇日期'); return; }
-  records.push({ id:Date.now(), type:entry.type, name:entry.name, icon:entry.icon, amount, date, note, phone });
-  save();
-  document.getElementById('income-select').value='';
-  document.getElementById('expense-select').value='';
-  document.getElementById('inp-custom').value='';
-  document.getElementById('inp-amount').value='';
-  document.getElementById('inp-note').value='';
-  document.getElementById('inp-phone').value='';
-  checkCustom();
-  buildMonthOptions();
-  alert('✅ 新增成功！');
-  switchPage('home');
-}
-
-function deleteRecord(id) {
-  if (!confirm('確定刪除這筆記錄？')) return;
-  records = records.filter(r=>r.id!==id);
-  save();
-  buildMonthOptions();
-  renderHome();
-  if (document.getElementById('page-cal').classList.contains('active')) renderCal();
-  renderQuery();
-}
-
-function editRecord(id) {
-  const r = records.find(x=>x.id===id);
-  if (!r) return;
-  switchPage('add');
-  setTimeout(()=>{
-    if (r.type==='income') {
-      document.getElementById('income-select').value = Object.keys(ICONS).includes(r.name)?r.name:'其他';
-      document.getElementById('expense-select').value='';
-      if (!Object.keys(ICONS).includes(r.name)||r.name==='其他') document.getElementById('inp-custom').value=r.name;
-    } else {
-      document.getElementById('expense-select').value = Object.keys(ICONS).includes(r.name)?r.name:'其他';
-      document.getElementById('income-select').value='';
-      if (!Object.keys(ICONS).includes(r.name)||r.name==='其他') document.getElementById('inp-custom').value=r.name;
-    }
-    checkCustom();
-    document.getElementById('inp-amount').value=r.amount;
-    document.getElementById('inp-date').value=r.date;
-    document.getElementById('inp-note').value=r.note||'';
-    document.getElementById('inp-phone').value=r.phone||'';
-    records=records.filter(x=>x.id!==id);
-    save();
-  },50);
-}
-
-function fmt(n) { return Math.abs(Math.round(n)).toLocaleString(); }
-
-function buildMonthOptions() {
-  const sel=document.getElementById('filter-month');
-  const prev=sel.value;
-  const months=new Set(records.map(r=>r.date.slice(0,7)));
-  months.add(new Date().toISOString().slice(0,7));
-  const arr=Array.from(months).sort().reverse();
-  sel.innerHTML=arr.map(m=>`<option value="${m}">${m.replace('-','年')}月</option>`).join('');
-  if (prev&&arr.includes(prev)) sel.value=prev;
-}
-
-function openDetail(id) {
-  const r = records.find(x=>x.id===id);
-  if (!r) return;
-  const isInc = r.type==='income';
-  document.getElementById('detail-icon').className = 'detail-icon ' + (isInc?'icon-i':'icon-e');
-  document.getElementById('detail-icon').textContent = r.icon||'🔑';
-  document.getElementById('detail-name').textContent = r.name;
-  document.getElementById('detail-type').textContent = isInc ? '💰 收入' : '💸 支出';
-  const amtEl = document.getElementById('detail-amt');
-  amtEl.textContent = (isInc?'+':'-') + r.amount.toLocaleString() + ' 元';
-  amtEl.style.background = isInc ? 'var(--inc-bg)' : 'var(--exp-bg)';
-  amtEl.style.color = isInc ? 'var(--inc)' : 'var(--exp)';
-
-  let rows = '';
-  rows += `<div class="detail-row"><div class="detail-row-icon">📅</div><div class="detail-row-label">日期</div><div class="detail-row-val">${r.date}</div></div>`;
-  if (r.phone) {
-    rows += `<div class="detail-row"><div class="detail-row-icon">📞</div><div class="detail-row-label">電話</div><div class="detail-row-val"><a href="tel:${r.phone}">${r.phone}</a></div></div>`;
-  }
-  if (r.note) {
-    const mapUrl = `https://maps.google.com/?q=${encodeURIComponent(r.note)}`;
-    rows += `<div class="detail-row"><div class="detail-row-icon">📍</div><div class="detail-row-label">地址/備註</div><div class="detail-row-val"><a href="${mapUrl}" target="_blank">${r.note}</a></div></div>`;
-  }
-  if (!r.phone && !r.note) {
-    rows += `<div class="detail-row"><div class="detail-row-icon">📝</div><div class="detail-row-label">備註</div><div class="detail-row-val" style="color:var(--text2)">無</div></div>`;
-  }
-
-  document.getElementById('detail-rows').innerHTML = rows;
-  document.getElementById('detail-edit-btn').onclick = () => { closeDetail(); editRecord(id); };
-  document.getElementById('detail-del-btn').onclick = () => { closeDetail(); deleteRecord(id); };
-  document.getElementById('detail-overlay').classList.add('show');
-}
-
-function closeDetail() {
-  document.getElementById('detail-overlay').classList.remove('show');
-}
-
-function closeDetailIfBg(e) {
-  if (e.target === document.getElementById('detail-overlay')) closeDetail();
-}
-
-function itemHTML(r,kw) {
-  function hl(t) {
-    if (!kw) return t;
-    const e=kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    return t.replace(new RegExp(e,'gi'),m=>`<span class="highlight">${m}</span>`);
-  }
-  const color=r.type==='income'?'var(--inc)':'var(--exp)';
-  const sign=r.type==='income'?'+':'-';
-  const phoneStr=r.phone?`<span style="color:var(--inc);margin-left:4px">📞 ${hl(r.phone)}</span>`:'';
-  const noteStr = r.note ? ' · ' + hl(r.note) : '';
-  return `
-    <div class="item" onclick="openDetail(${r.id})">
-      <div class="item-icon ${r.type==='income'?'icon-i':'icon-e'}">${r.icon||'🔑'}</div>
-      <div class="item-info">
-        <div class="item-name">${hl(r.name)}</div>
-        <div class="item-meta">${r.date}${noteStr}${phoneStr}</div>
-      </div>
-      <div class="item-amt" style="color:${color}">${sign}${r.amount.toLocaleString()}</div>
-    </div>`;
-}
-
-function renderBreakdown(subset,label) {
-  document.getElementById('stat-badge').textContent=label;
-  const nameMap={};
-  subset.forEach(r=>{ if(!nameMap[r.name])nameMap[r.name]={income:0,expense:0}; nameMap[r.name][r.type]+=r.amount; });
-  const cats=Object.entries(nameMap).sort((a,b)=>(b[1].income+b[1].expense)-(a[1].income+a[1].expense));
-  const maxVal=Math.max(...cats.map(([,v])=>v.income+v.expense),1);
-  const bdEl=document.getElementById('breakdown');
-  if (!cats.length) { bdEl.innerHTML='<div class="empty">暫無資料</div>'; return; }
-  bdEl.innerHTML=cats.map(([name,vals])=>{
-    const total=vals.income+vals.expense;
-    const pct=Math.round(total/maxVal*100);
-    const isInc=vals.income>=vals.expense;
-    return `<div class="bd-row">
-      <div class="bd-label">${name}</div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${isInc?'#5DCAA5':'#F0997B'}"></div></div>
-      <div class="bd-amt" style="color:${isInc?'var(--inc-fg)':'var(--exp-fg)'}">${isInc?'+':'-'}${fmt(total)}</div>
-    </div>`;
-  }).join('');
+/* ========== 總覽 ========== */
+function metrics(list, a, b, c) {
+  const i = sum(list, 'income'), e = sum(list, 'expense'), p = i - e;
+  return `<div class="metric"><div class="metric-label">${a}</div><div class="metric-value c-inc">+${fmt(i)}</div></div>
+    <div class="metric"><div class="metric-label">${b}</div><div class="metric-value c-exp">-${fmt(e)}</div></div>
+    <div class="metric"><div class="metric-label">${c}</div><div class="metric-value ${p >= 0 ? 'c-pp' : 'c-pn'}">${p >= 0 ? '+' : '-'}${fmt(p)}</div></div>`;
 }
 
 function renderHome() {
-  const today=new Date().toISOString().split('T')[0];
-  const nowMonth=today.slice(0,7);
-  const nowYear=today.slice(0,4);
-  document.getElementById('home-year-label').textContent=nowYear+' 年度概況';
-  const yearly=records.filter(r=>r.date.slice(0,4)===nowYear);
-  const yI=yearly.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-  const yE=yearly.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
-  const yP=yI-yE;
-  document.getElementById('year-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">年營收</div><div class="metric-value c-inc">+${fmt(yI)}</div></div>
-    <div class="metric"><div class="metric-label">年支出</div><div class="metric-value c-exp">-${fmt(yE)}</div></div>
-    <div class="metric"><div class="metric-label">年利潤</div><div class="metric-value ${yP>=0?'c-pp':'c-pn'}">${yP>=0?'+':'-'}${fmt(yP)}</div></div>`;
-  document.getElementById('home-month-label').textContent=nowMonth.replace('-','年')+'月概況';
-  const monthly=records.filter(r=>r.date.slice(0,7)===nowMonth);
-  const mI=monthly.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-  const mE=monthly.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
-  const mN=mI-mE;
-  document.getElementById('month-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">月營收</div><div class="metric-value c-inc">+${fmt(mI)}</div></div>
-    <div class="metric"><div class="metric-label">月支出</div><div class="metric-value c-exp">-${fmt(mE)}</div></div>
-    <div class="metric"><div class="metric-label">月利潤</div><div class="metric-value ${mN>=0?'c-pp':'c-pn'}">${mN>=0?'+':'-'}${fmt(mN)}</div></div>`;
-  document.getElementById('home-day-label').textContent=today.replace(/-/g,'/')+'  今日概況';
-  const daily=records.filter(r=>r.date===today);
-  const dI=daily.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-  const dE=daily.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
-  const dN=dI-dE;
-  document.getElementById('day-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">日營收</div><div class="metric-value c-inc">+${fmt(dI)}</div></div>
-    <div class="metric"><div class="metric-label">日支出</div><div class="metric-value c-exp">-${fmt(dE)}</div></div>
-    <div class="metric"><div class="metric-label">日利潤</div><div class="metric-value ${dN>=0?'c-pp':'c-pn'}">${dN>=0?'+':'-'}${fmt(dN)}</div></div>`;
-  renderHomeCal();
+  const today = todayStr(), mon = today.slice(0, 7), yr = today.slice(0, 4);
+  $('lbl-year').textContent = yr + ' 年度概況';
+  $('lbl-month').textContent = mon.replace('-', ' 年 ') + ' 月概況';
+  $('lbl-day').textContent = today.replace(/-/g, '/') + '　今日概況';
+  $('m-year').innerHTML  = metrics(records.filter(r => r.date.startsWith(yr)),  '年營收', '年支出', '年利潤');
+  $('m-month').innerHTML = metrics(records.filter(r => r.date.startsWith(mon)), '月營收', '月支出', '月利潤');
+  $('m-day').innerHTML   = metrics(records.filter(r => r.date === today),       '日營收', '日支出', '日利潤');
+  renderNotice();
+  renderCal();
+}
+
+function renderNotice() {
+  const last = localStorage.getItem(BKEY);
+  const days = last ? Math.floor((Date.now() - Number(last)) / 86400000) : null;
+  let msg = '';
+  if (records.length && days === null) msg = '還沒備份過，資料只存在這支手機';
+  else if (records.length && days >= 14) msg = `已經 ${days} 天沒備份了`;
+  $('backup-notice').innerHTML = msg
+    ? `<div class="notice"><span>💾 ${msg}</span><button onclick="switchPage('backup')">去備份</button></div>` : '';
+}
+
+/* ========== 月曆 ========== */
+function calMove(d) {
+  calMonth += d;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  selDay = null;
+  renderCal();
+}
+
+function renderCal() {
+  const y = calYear, m = calMonth, prefix = `${y}-${pad(m + 1)}-`;
+  $('cal-title').textContent = `${y} 年 ${m + 1} 月`;
+  const first = new Date(y, m, 1).getDay();
+  const dim = new Date(y, m + 1, 0).getDate();
+  const prevDim = new Date(y, m, 0).getDate();
+  const today = todayStr();
+  const byDay = {};
+  records.forEach(r => { if (r.date.startsWith(prefix)) (byDay[r.date] = byDay[r.date] || []).push(r); });
+
+  const cells = [];
+  for (let i = 0; i < first; i++) cells.push({ inc: 0, html: `<div class="cal-day other"><div class="cal-num">${prevDim - first + i + 1}</div></div>` });
+  for (let d = 1; d <= dim; d++) {
+    const ds = prefix + pad(d);
+    const recs = byDay[ds] || [];
+    const dm = memos[ds] || [];
+    const dow = (first + d - 1) % 7;
+    const inc = sum(recs, 'income');
+    let tags = recs.slice(0, 2).map(r => `<div class="cal-tag ${r.type === 'income' ? 'inc' : 'exp'}">${esc(r.icon || '')}${esc(r.name.length > 4 ? r.name.slice(0, 4) + '…' : r.name)}</div>`).join('');
+    if (recs.length > 2) tags += `<div class="cal-tag inc">+${recs.length - 2}筆</div>`;
+    if (dm.length) tags += `<div class="cal-tag memo">📌${esc(dm[0].length > 4 ? dm[0].slice(0, 4) + '…' : dm[0])}</div>`;
+    const cls = ['cal-day', ds === today ? 'today' : '', ds === selDay ? 'sel' : '', inc >= GOLD_AT ? 'gold' : inc >= GREEN_AT ? 'green' : ''].join(' ');
+    cells.push({ inc, html: `<div class="${cls}" onclick="selectDay('${ds}')"><div class="cal-num ${dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''}">${d}</div>${tags}</div>` });
+  }
+  const rest = (7 - cells.length % 7) % 7;
+  for (let d = 1; d <= rest; d++) cells.push({ inc: 0, html: `<div class="cal-day other"><div class="cal-num">${d}</div></div>` });
+
+  let html = `<div class="cal-dow-row">${['日','一','二','三','四','五','六'].map((d, i) => `<div class="cal-dow ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${d}</div>`).join('')}</div>`;
+  for (let w = 0; w < cells.length / 7; w++) {
+    const wk = cells.slice(w * 7, w * 7 + 7);
+    const wInc = wk.reduce((s, c) => s + c.inc, 0);
+    const wStr = wInc >= 10000 ? (wInc / 10000).toFixed(1) + '萬' : wInc.toLocaleString();
+    html += `<div class="cal-week">${wk.map(c => c.html).join('')}</div>
+      <div class="cal-week-row"><span class="cal-week-label">本週收入</span><span class="cal-week-val">${wInc > 0 ? '+' + wStr : '—'}</span></div>`;
+  }
+  $('cal-grid').innerHTML = html;
+  renderDayDetail();
+}
+
+function selectDay(ds) { selDay = ds; renderCal(); }
+
+function renderDayDetail() {
+  const el = $('cal-detail');
+  if (!selDay) { el.innerHTML = '<div class="cal-hint">點任一天查看明細</div>'; return; }
+  const recs = records.filter(r => r.date === selDay).sort((a, b) => a.id - b.id);
+  const dm = memos[selDay] || [];
+  const i = sum(recs, 'income'), e = sum(recs, 'expense'), n = i - e;
+  el.innerHTML = `<div class="cal-day-detail">
+    <div class="detail-top">
+      <div class="detail-top-title">📋 ${selDay} 明細</div>
+      <button class="small-btn" onclick="openMemo('${selDay}')">📌 備忘</button>
+    </div>
+    ${dm.length ? `<div class="memo-block"><div class="memo-block-title">備忘事項</div>${dm.map(m => `<div class="m">${esc(m)}</div>`).join('')}</div>` : ''}
+    <div class="day-chips">
+      <div class="day-chip"><div class="day-chip-label">收入</div><div class="day-chip-val c-inc">+${fmt(i)}</div></div>
+      <div class="day-chip"><div class="day-chip-label">支出</div><div class="day-chip-val c-exp">-${fmt(e)}</div></div>
+      <div class="day-chip"><div class="day-chip-label">結餘</div><div class="day-chip-val ${n >= 0 ? 'c-pp' : 'c-pn'}">${n >= 0 ? '+' : '-'}${fmt(n)}</div></div>
+    </div>
+    <div class="record-list">${recs.length ? recs.map(r => itemHTML(r)).join('') : '<div class="empty" style="padding:1rem">當日無記錄</div>'}</div>
+  </div>`;
+}
+
+/* ========== 備忘 ========== */
+function openMemo(ds) {
+  memoDate = ds;
+  $('memo-title').textContent = `📅 ${ds} 備忘`;
+  renderMemoList();
+  $('memo-overlay').classList.add('show');
+}
+function closeMemo() { $('memo-overlay').classList.remove('show'); $('memo-input').value = ''; }
+function renderMemoList() {
+  const list = memos[memoDate] || [];
+  $('memo-list').innerHTML = list.length
+    ? list.map((m, i) => `<div class="memo-item"><span>${esc(m)}</span><button onclick="deleteMemo(${i})">🗑</button></div>`).join('')
+    : '<div style="color:var(--text2);font-size:13px;padding:4px 0">暫無備忘</div>';
+}
+function addMemo() {
+  const v = $('memo-input').value.trim();
+  if (!v) return;
+  (memos[memoDate] = memos[memoDate] || []).push(v);
+  saveMemos();
+  $('memo-input').value = '';
+  renderMemoList(); renderCal();
+}
+function deleteMemo(i) {
+  memos[memoDate].splice(i, 1);
+  if (!memos[memoDate].length) delete memos[memoDate];
+  saveMemos(); renderMemoList(); renderCal();
+}
+$('memo-input').addEventListener('keydown', e => { if (e.key === 'Enter') addMemo(); });
+
+/* ========== 新增 / 編輯 ========== */
+function fillSelect(id, list) {
+  $(id).innerHTML = '<option value="">— 請選擇 —</option>' + list.map(x => `<option>${x}</option>`).join('') + '<option value="其他">其他</option>';
+}
+fillSelect('income-select', INCOME);
+fillSelect('expense-select', EXPENSE);
+
+function onPick(side) {
+  if ($(side + '-select').value) $((side === 'income' ? 'expense' : 'income') + '-select').value = '';
+  checkCustom();
+}
+function checkCustom() {
+  const other = $('income-select').value === '其他' || $('expense-select').value === '其他';
+  $('custom-field').classList.toggle('show', other);
+  if (!other) $('inp-custom').value = '';
+}
+
+function resetForm() {
+  editingId = null;
+  ['income-select','expense-select','inp-custom','inp-amount','inp-note','inp-phone'].forEach(id => $(id).value = '');
+  $('inp-date').value = todayStr();
+  $('form-title').textContent = '新增記錄';
+  $('btn-save').textContent = '＋ 新增';
+  $('btn-cancel').style.display = 'none';
+  $('edit-banner').style.display = 'none';
+  checkCustom();
+}
+
+function saveRecord() {
+  const iv = $('income-select').value, ev = $('expense-select').value;
+  const amount = parseFloat($('inp-amount').value);
+  const date = $('inp-date').value;
+  if (!iv && !ev) return alert('請選擇收入或支出項目');
+  const sel = iv || ev;
+  const name = sel === '其他' ? $('inp-custom').value.trim() : sel;
+  if (!name) return alert('請填寫自訂項目名稱');
+  if (!amount || amount <= 0) return alert('請填寫正確金額');
+  if (!date) return alert('請選擇日期');
+  const rec = {
+    id: editingId || Date.now(), type: iv ? 'income' : 'expense', name,
+    icon: ICONS[sel] || '•', amount, date,
+    note: $('inp-note').value.trim(), phone: $('inp-phone').value.trim()
+  };
+  const wasEdit = !!editingId;
+  if (wasEdit) records = records.map(r => r.id === editingId ? rec : r);
+  else records.push(rec);
+  if (!saveRecords()) return;
+  resetForm();
+  calYear = +date.slice(0, 4); calMonth = +date.slice(5, 7) - 1; selDay = date;
+  switchPage('home');
+  toast(wasEdit ? '✅ 已儲存修改' : '✅ 新增成功');
+}
+
+function startEdit(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  switchPage('add', true);
+  editingId = id;
+  const known = (r.type === 'income' ? INCOME : EXPENSE).includes(r.name);
+  $('income-select').value = r.type === 'income' ? (known ? r.name : '其他') : '';
+  $('expense-select').value = r.type === 'expense' ? (known ? r.name : '其他') : '';
+  checkCustom();
+  if (!known) $('inp-custom').value = r.name;
+  $('inp-amount').value = r.amount;
+  $('inp-date').value = r.date;
+  $('inp-note').value = r.note || '';
+  $('inp-phone').value = r.phone || '';
+  $('form-title').textContent = '編輯記錄';
+  $('btn-save').textContent = '儲存修改';
+  $('btn-cancel').style.display = '';
+  $('edit-banner').style.display = 'block';
+}
+
+function cancelEdit() { resetForm(); switchPage('home'); }
+
+function deleteRecord(id) {
+  if (!confirm('確定刪除這筆記錄？')) return;
+  records = records.filter(r => r.id !== id);
+  saveRecords();
+  renderHome(); renderQuery();
+  toast('已刪除');
+}
+
+/* ========== 記錄列表與詳細 ========== */
+function itemHTML(r, kw) {
+  const hl = t => {
+    const s = esc(t);
+    return kw ? s.replace(new RegExp(reEsc(esc(kw)), 'gi'), m => `<span class="highlight">${m}</span>`) : s;
+  };
+  const inc = r.type === 'income';
+  const phone = r.phone ? `<span style="color:var(--inc);margin-left:4px">📞 ${hl(r.phone)}</span>` : '';
+  return `<div class="item" onclick="openDetail(${r.id})">
+    <div class="item-icon ${inc ? 'icon-i' : 'icon-e'}">${esc(r.icon || '🔑')}</div>
+    <div class="item-info">
+      <div class="item-name">${hl(r.name)}</div>
+      <div class="item-meta">${esc(r.date)}${r.note ? ' · ' + hl(r.note) : ''}${phone}</div>
+    </div>
+    <div class="item-amt" style="color:${inc ? 'var(--inc)' : 'var(--exp)'}">${inc ? '+' : '-'}${r.amount.toLocaleString()}</div>
+  </div>`;
+}
+
+function openDetail(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  const inc = r.type === 'income';
+  $('d-icon').className = 'd-icon ' + (inc ? 'icon-i' : 'icon-e');
+  $('d-icon').textContent = r.icon || '🔑';
+  $('d-name').textContent = r.name;
+  $('d-type').textContent = inc ? '💰 收入' : '💸 支出';
+  const amt = $('d-amt');
+  amt.textContent = (inc ? '+' : '-') + r.amount.toLocaleString() + ' 元';
+  amt.style.background = inc ? 'var(--inc-bg)' : 'var(--exp-bg)';
+  amt.style.color = inc ? 'var(--inc)' : 'var(--exp)';
+  let rows = `<div class="d-row"><div class="ic">📅</div><div class="lb">日期</div><div class="vl">${esc(r.date)}</div></div>`;
+  if (r.phone) rows += `<div class="d-row"><div class="ic">📞</div><div class="lb">電話</div><div class="vl"><a href="tel:${esc(r.phone.replace(/[^\d+]/g, ''))}">${esc(r.phone)}</a></div></div>`;
+  if (r.note) rows += `<div class="d-row"><div class="ic">📍</div><div class="lb">地址/備註</div><div class="vl"><a href="https://maps.google.com/?q=${encodeURIComponent(r.note)}" target="_blank" rel="noopener">${esc(r.note)}</a></div></div>`;
+  if (!r.phone && !r.note) rows += `<div class="d-row"><div class="ic">📝</div><div class="lb">備註</div><div class="vl" style="color:var(--text2)">無</div></div>`;
+  $('d-rows').innerHTML = rows;
+  $('d-edit').onclick = () => { closeDetail(); startEdit(id); };
+  $('d-del').onclick = () => { closeDetail(); deleteRecord(id); };
+  $('detail-overlay').classList.add('show');
+}
+function closeDetail() { $('detail-overlay').classList.remove('show'); }
+
+/* ========== 查詢 ========== */
+function buildMonthOptions() {
+  const sel = $('filter-month'), prev = sel.value;
+  const set = new Set(records.map(r => r.date.slice(0, 7)));
+  set.add(todayStr().slice(0, 7));
+  const arr = [...set].sort().reverse();
+  sel.innerHTML = arr.map(m => `<option value="${m}">${m.replace('-', ' 年 ')} 月</option>`).join('');
+  if (prev && arr.includes(prev)) sel.value = prev;
 }
 
 function switchQueryTab(tab) {
-  queryTab=tab;
-  ['month','day','kw'].forEach(t=>{
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
-    document.getElementById('qpane-'+t).style.display=t===tab?'':'none';
+  queryTab = tab;
+  ['month','day','kw'].forEach(t => {
+    $('tab-' + t).classList.toggle('active', t === tab);
+    $('qpane-' + t).style.display = t === tab ? '' : 'none';
   });
-  document.getElementById('bd-card').style.display=tab==='kw'?'none':'';
+  $('bd-card').style.display = tab === 'kw' ? 'none' : '';
   renderQuery();
+}
+
+function renderBreakdown(subset, label) {
+  $('stat-badge').textContent = label;
+  const map = {};
+  subset.forEach(r => { (map[r.name] = map[r.name] || { income: 0, expense: 0 })[r.type] += r.amount; });
+  const cats = Object.entries(map).sort((a, b) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense));
+  if (!cats.length) { $('breakdown').innerHTML = '<div class="empty">暫無資料</div>'; return; }
+  const max = Math.max(...cats.map(([, v]) => v.income + v.expense), 1);
+  $('breakdown').innerHTML = cats.map(([name, v]) => {
+    const total = v.income + v.expense, isInc = v.income >= v.expense;
+    return `<div class="bd-row"><div class="bd-label">${esc(name)}</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(total / max * 100)}%;background:${isInc ? '#5DCAA5' : '#F0997B'}"></div></div>
+      <div class="bd-amt" style="color:${isInc ? 'var(--inc-fg)' : 'var(--exp-fg)'}">${isInc ? '+' : '-'}${fmt(total)}</div></div>`;
+  }).join('');
 }
 
 function renderQuery() {
   buildMonthOptions();
-  if (queryTab==='month') {
-    const month=document.getElementById('filter-month').value;
-    const typeF=document.getElementById('filter-type').value;
-    const monthly=records.filter(r=>r.date.slice(0,7)===month);
-    const filtered=monthly.filter(r=>typeF==='all'||r.type===typeF);
-    const sorted=[...filtered].sort((a,b)=>b.date.localeCompare(a.date));
-    document.getElementById('query-list').innerHTML=sorted.length?sorted.map(r=>itemHTML(r,'')).join(''):'<div class="empty">本月無記錄</div>';
-    renderBreakdown(monthly,month.replace('-','年')+'月');
-  } else if (queryTab==='day') {
-    const day=document.getElementById('filter-day').value;
-    const typeF=document.getElementById('filter-type-day').value;
-    const chips=document.getElementById('day-chips');
-    if (day) {
-      const dayRecs=records.filter(r=>r.date===day);
-      const dI=dayRecs.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-      const dE=dayRecs.filter(r=>r.type==='expense').reduce((s,r)=>s+r.amount,0);
-      const dN=dI-dE;
-      chips.style.display='';
-      chips.innerHTML=`
-        <div class="day-chip"><div class="day-chip-label">當日收入</div><div class="day-chip-val c-inc">+${fmt(dI)}</div></div>
-        <div class="day-chip"><div class="day-chip-label">當日支出</div><div class="day-chip-val c-exp">-${fmt(dE)}</div></div>
-        <div class="day-chip"><div class="day-chip-label">當日結餘</div><div class="day-chip-val ${dN>=0?'c-pp':'c-pn'}">${dN>=0?'+':'-'}${fmt(dN)}</div></div>`;
-      const filtered=dayRecs.filter(r=>typeF==='all'||r.type===typeF);
-      document.getElementById('query-list').innerHTML=filtered.length?filtered.map(r=>itemHTML(r,'')).join(''):'<div class="empty">當日無記錄</div>';
-      renderBreakdown(dayRecs,day);
-    } else {
-      chips.style.display='none';
-      document.getElementById('query-list').innerHTML='<div class="empty">請選擇日期</div>';
-      renderBreakdown([],'—');
-    }
+  const list = $('query-list');
+  if (queryTab === 'month') {
+    const month = $('filter-month').value, typeF = $('filter-type').value;
+    const monthly = records.filter(r => r.date.startsWith(month));
+    const rows = monthly.filter(r => typeF === 'all' || r.type === typeF).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+    list.innerHTML = rows.length ? rows.map(r => itemHTML(r)).join('') : '<div class="empty">本月無記錄</div>';
+    renderBreakdown(monthly, month.replace('-', ' 年 ') + ' 月');
+  } else if (queryTab === 'day') {
+    const day = $('filter-day').value, typeF = $('filter-type-day').value, chips = $('day-chips');
+    if (!day) { chips.style.display = 'none'; list.innerHTML = '<div class="empty">請選擇日期</div>'; renderBreakdown([], '—'); return; }
+    const dayRecs = records.filter(r => r.date === day);
+    const i = sum(dayRecs, 'income'), e = sum(dayRecs, 'expense'), n = i - e;
+    chips.style.display = '';
+    chips.innerHTML = `<div class="day-chip"><div class="day-chip-label">當日收入</div><div class="day-chip-val c-inc">+${fmt(i)}</div></div>
+      <div class="day-chip"><div class="day-chip-label">當日支出</div><div class="day-chip-val c-exp">-${fmt(e)}</div></div>
+      <div class="day-chip"><div class="day-chip-label">當日結餘</div><div class="day-chip-val ${n >= 0 ? 'c-pp' : 'c-pn'}">${n >= 0 ? '+' : '-'}${fmt(n)}</div></div>`;
+    const rows = dayRecs.filter(r => typeF === 'all' || r.type === typeF);
+    list.innerHTML = rows.length ? rows.map(r => itemHTML(r)).join('') : '<div class="empty">當日無記錄</div>';
+    renderBreakdown(dayRecs, day);
   } else {
-    renderSearch(document.getElementById('search-input').value.trim());
+    renderSearch($('search-input').value.trim());
   }
 }
 
 function onSearchInput() {
-  const kw=document.getElementById('search-input').value.trim();
-  document.getElementById('search-clear').className='sc'+(kw?' show':'');
+  const kw = $('search-input').value.trim();
+  $('search-clear').classList.toggle('show', !!kw);
   renderSearch(kw);
 }
-function clearSearch() {
-  document.getElementById('search-input').value='';
-  document.getElementById('search-clear').className='sc';
-  renderSearch('');
-}
+function clearSearch() { $('search-input').value = ''; onSearchInput(); }
 function renderSearch(kw) {
-  const hint=document.getElementById('search-hint');
-  if (!kw) { hint.textContent='輸入關鍵字搜尋所有記錄'; document.getElementById('query-list').innerHTML=''; return; }
-  const kwL=kw.toLowerCase();
-  const results=records.filter(r=>
-    r.name.toLowerCase().includes(kwL)||
-    (r.note&&r.note.toLowerCase().includes(kwL))||
-    (r.phone&&r.phone.includes(kw))||
-    r.date.includes(kw)
-  ).sort((a,b)=>b.date.localeCompare(a.date));
-  hint.textContent=`找到 ${results.length} 筆記錄`;
-  document.getElementById('query-list').innerHTML=results.length?results.map(r=>itemHTML(r,kw)).join(''):'<div class="empty">找不到相關記錄</div>';
+  const hint = $('search-hint'), list = $('query-list');
+  if (!kw) { hint.textContent = '輸入關鍵字搜尋所有記錄'; list.innerHTML = ''; return; }
+  const k = kw.toLowerCase();
+  const rows = records.filter(r => r.name.toLowerCase().includes(k) || (r.note || '').toLowerCase().includes(k) || (r.phone || '').includes(kw) || r.date.includes(kw))
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  hint.textContent = `找到 ${rows.length} 筆記錄`;
+  list.innerHTML = rows.length ? rows.map(r => itemHTML(r, kw)).join('') : '<div class="empty">找不到相關記錄</div>';
 }
 
-async function exportData() {
-  const data = { records, memos, exportedAt: new Date().toISOString() };
-  const json = JSON.stringify(data, null, 2);
-  const date = new Date().toISOString().slice(0,10);
-  const fileName = `鎖匠記帳備份_${date}.json`;
-  const blob = new Blob([json], { type: 'application/json' });
-  const file = new File([blob], fileName, { type: 'application/json' });
-  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: '鎖匠記帳備份' }); return; }
-    catch(e) { if (e.name === 'AbortError') return; }
+/* ========== 備份 / 還原 ========== */
+function renderBackup() {
+  const last = localStorage.getItem(BKEY);
+  const memoCount = Object.values(memos).reduce((s, a) => s + a.length, 0);
+  $('bk-stats').innerHTML =
+    `<div class="bk-stat"><span>記帳記錄</span><span>${records.length} 筆</span></div>
+     <div class="bk-stat"><span>備忘事項</span><span>${memoCount} 則</span></div>
+     <div class="bk-stat"><span>上次備份</span><span>${last ? new Date(Number(last)).toLocaleDateString('zh-TW') : '尚未備份'}</span></div>`;
+}
+
+async function exportBackup() {
+  const data = { app: 'locksmith', version: 2, exportedAt: new Date().toISOString(), records, memos };
+  const name = `鎖匠記帳備份-${todayStr()}.json`;
+  const json = JSON.stringify(data, null, 1);
+  try {
+    const file = new File([json], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: name });
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }
+    store(BKEY, String(Date.now()));
+    renderBackup(); renderNotice();
+    toast('✅ 備份完成');
+  } catch (e) {
+    if (e && e.name !== 'AbortError') alert('匯出失敗：' + e.message);
   }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = fileName; a.click();
-  URL.revokeObjectURL(url);
 }
 
-function importData() {
-  const input = document.createElement('input');
-  input.type = 'file'; input.accept = '.json';
-  input.onchange = e => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        if (data.records) { records = data.records; save(); }
-        if (data.memos) { memos = data.memos; saveMemos(); }
-        buildMonthOptions(); renderHome();
-        alert('✅ 匯入成功！共 '+records.length+' 筆記錄');
-      } catch(e) { alert('❌ 檔案格式錯誤'); }
-    };
-    reader.readAsText(file);
+function importBackup(input) {
+  const f = input.files[0];
+  input.value = '';
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const inRecs = Array.isArray(data) ? data : data.records;
+      if (!Array.isArray(inRecs)) throw new Error('不是有效的備份檔');
+      const have = new Set(records.map(r => r.id));
+      const fresh = inRecs.filter(r => r && (r.type === 'income' || r.type === 'expense') && typeof r.amount === 'number' && typeof r.date === 'string' && typeof r.name === 'string' && !have.has(r.id));
+      const inMemos = (!Array.isArray(data) && data.memos && typeof data.memos === 'object') ? data.memos : {};
+      let memoAdd = 0;
+      Object.entries(inMemos).forEach(([d, arr]) => {
+        if (!Array.isArray(arr)) return;
+        arr.forEach(m => {
+          memos[d] = memos[d] || [];
+          if (typeof m === 'string' && !memos[d].includes(m)) { memos[d].push(m); memoAdd++; }
+        });
+      });
+      if (!fresh.length && !memoAdd) { alert('備份檔裡沒有新的資料，不需要匯入'); return; }
+      if (!confirm(`將補上 ${fresh.length} 筆記錄、${memoAdd} 則備忘，確定匯入？`)) return;
+      records = records.concat(fresh);
+      saveRecords(); saveMemos();
+      renderBackup();
+      toast('✅ 匯入完成');
+    } catch (e) {
+      alert('匯入失敗：' + e.message);
+    }
   };
-  input.click();
+  reader.readAsText(f);
 }
 
-document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
-document.getElementById('filter-day').value=new Date().toISOString().split('T')[0];
-buildMonthOptions();
+/* ========== 啟動 ========== */
+$('filter-day').value = todayStr();
+resetForm();
 renderHome();
-renderCal();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>
